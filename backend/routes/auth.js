@@ -10,3 +10,4 @@ router.post("/register", validateUser, register)
 router.get("/me", authenticateToken, getMe)
 
 export default router
+
