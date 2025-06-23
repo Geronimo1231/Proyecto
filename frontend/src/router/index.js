@@ -1,25 +1,25 @@
-import { createRouter, createWebHistory } from "vue-router"
-import { useAuthStore } from "../stores/auth.js"
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "../stores/auth.js";
 
 // Vistas globales
-import Home from "../views/HomeView.vue"
-import Login from "../views/LoginForm.vue"
+import Home from "../views/HomeView.vue";
+import Login from "../views/LoginForm.vue";
 
 // Vistas de administrador
-import AdminLayout from "../layouts/AdminLayout.vue"
-import AdminDashboard from "../views/admin/DashboardView.vue"
-import AdminAsignaciones from "../views/admin/AsignacionesView.vue"
-import AdminMapa from "../views/admin/MapaView.vue"
-import AdminRegistrar from "../views/admin/RegistrarView.vue"
-import AdminUsuarios from "../views/admin/UsuariosView.vue"
-import AdminVehiculos from "../views/admin/VehiculosView.vue"
+import AdminLayout from "../layouts/AdminLayout.vue";
+import AdminDashboard from "../views/admin/DashboardView.vue";
+import AdminAsignaciones from "../views/admin/AsignacionesView.vue";
+import AdminMapa from "../views/admin/MapaView.vue";
+import AdminRegistrar from "../views/admin/RegistrarView.vue";
+import AdminUsuarios from "../views/admin/UsuariosView.vue";
+import AdminVehiculos from "../views/admin/VehiculosView.vue";
 
 // Vistas de usuario
-import UserLayout from "../layouts/UserLayout.vue"
-import UserDashboard from "../views/user/DashboardUser.vue"
-import UserMapa from "../views/user/MapaviewUser.vue"
-import UserPerfil from "../views/user/PerfilView.vue"
-import UserVehiculos from "../views/user/VehiculoView.vue"
+import UserLayout from "../layouts/UserLayout.vue";
+import UserDashboard from "../views/user/DashboardUser.vue";
+import UserMapa from "../views/user/MapaviewUser.vue";
+import UserPerfil from "../views/user/PerfilView.vue";
+import UserVehiculos from "../views/user/VehiculoView.vue";
 
 const routes = [
   {
@@ -39,40 +39,13 @@ const routes = [
     component: AdminLayout,
     meta: { requiresAuth: true, requiresRole: "admin" },
     children: [
-      {
-        path: "",
-        redirect: "/admin/dashboard",
-      },
-      {
-        path: "dashboard",
-        name: "AdminDashboard",
-        component: AdminDashboard,
-      },
-      {
-        path: "asignaciones",
-        name: "AdminAsignaciones",
-        component: AdminAsignaciones,
-      },
-      {
-        path: "mapa",
-        name: "AdminMapa",
-        component: AdminMapa,
-      },
-      {
-        path: "registrar",
-        name: "AdminRegistrar",
-        component: AdminRegistrar,
-      },
-      {
-        path: "usuarios",
-        name: "AdminUsuarios",
-        component: AdminUsuarios,
-      },
-      {
-        path: "vehiculos",
-        name: "AdminVehiculos",
-        component: AdminVehiculos,
-      },
+      { path: "", redirect: "/admin/dashboard" },
+      { path: "dashboard", name: "AdminDashboard", component: AdminDashboard },
+      { path: "asignaciones", name: "AdminAsignaciones", component: AdminAsignaciones },
+      { path: "mapa", name: "AdminMapa", component: AdminMapa },
+      { path: "registrar", name: "AdminRegistrar", component: AdminRegistrar },
+      { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
+      { path: "vehiculos", name: "AdminVehiculos", component: AdminVehiculos },
     ],
   },
   {
@@ -80,74 +53,62 @@ const routes = [
     component: UserLayout,
     meta: { requiresAuth: true, requiresRole: "usuario" },
     children: [
-      {
-        path: "",
-        redirect: "/user/dashboard",
-      },
-      {
-        path: "dashboard",
-        name: "UserDashboard",
-        component: UserDashboard,
-      },
-      {
-        path: "mapa",
-        name: "UserMapa",
-        component: UserMapa,
-      },
-      {
-        path: "perfil",
-        name: "UserPerfil",
-        component: UserPerfil,
-      },
-      {
-        path: "vehiculos",
-        name: "UserVehiculos",
-        component: UserVehiculos,
-      },
+      { path: "", redirect: "/user/dashboard" },
+      { path: "dashboard", name: "UserDashboard", component: UserDashboard },
+      { path: "mapa", name: "UserMapa", component: UserMapa },
+      { path: "perfil", name: "UserPerfil", component: UserPerfil },
+      { path: "vehiculos", name: "UserVehiculos", component: UserVehiculos },
     ],
   },
   {
     path: "/:pathMatch(.*)*",
     redirect: "/",
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      next("/login")
-      return
+      if (to.name !== "Login") {
+        return next({ name: "Login" });
+      } else {
+        return next(); // Ya estás en login, continúa normalmente
+      }
     }
 
     if (to.meta.requiresRole && authStore.user?.rol !== to.meta.requiresRole) {
-      // Redirigir según el rol del usuario
       if (authStore.user?.rol === "admin") {
-        next({ name: "AdminDashboard" })
+        if (to.name !== "AdminDashboard") {
+          return next({ name: "AdminDashboard" });
+        }
       } else {
-        next({ name: "UserDashboard" })
+        if (to.name !== "UserDashboard") {
+          return next({ name: "UserDashboard" });
+        }
       }
-      return
+      return next(); // Si ya estás en dashboard correcto
     }
   }
 
-  // Si está autenticado y trata de ir a login, redirigir al dashboard correspondiente
   if (to.name === "Login" && authStore.isAuthenticated) {
     if (authStore.user?.rol === "admin") {
-      next({ name: "AdminDashboard" })
+      if (to.name !== "AdminDashboard") {
+        return next({ name: "AdminDashboard" });
+      }
     } else {
-      next({ name: "UserDashboard" })
+      if (to.name !== "UserDashboard") {
+        return next({ name: "UserDashboard" });
+      }
     }
-    return
+    return next(); // Ya estás en dashboard correcto
   }
 
-  next()
-})
-
-export default router
+  next();
+});
