@@ -1,17 +1,14 @@
-"use client"
-
 import axios from "axios"
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 
+// Usa la variable de entorno de Vue CLI con prefijo VUE_APP_
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
+  baseURL: process.env.VUE_APP_API_URL || "http://localhost:8080/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 })
-
-const toast = ToastPlugin()
 
 // Interceptor para requests
 api.interceptors.request.use(
@@ -22,16 +19,12 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error)
 )
 
 // Interceptor para responses
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token")
@@ -40,7 +33,7 @@ api.interceptors.response.use(
       toast.error("Error del servidor. Intente nuevamente.")
     }
     return Promise.reject(error)
-  },
+  }
 )
 
 export default api

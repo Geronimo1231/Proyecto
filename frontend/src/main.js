@@ -10,6 +10,11 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.use(ToastPlugin)  // Aquí registras el plugin
+
+// Opcional: Puedes pasar opciones al ToastPlugin
+app.use(ToastPlugin, {
+  autoClose: 3000,        // Toasts se cierran en 3 segundos
+  position: 'top-right',  // Ubicación del toast
+})
 
 app.mount('#app')

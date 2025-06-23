@@ -23,7 +23,7 @@ import UserVehiculos from "../views/user/VehiculoView.vue"
 
 const routes = [
   {
-    path: "/",
+    path: "/home",
     name: "Home",
     component: Home,
     meta: { requiresAuth: false },
@@ -129,9 +129,9 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresRole && authStore.user?.rol !== to.meta.requiresRole) {
       // Redirigir según el rol del usuario
       if (authStore.user?.rol === "admin") {
-        next("/admin/DashboardView.vue")
+        next({ name: "AdminDashboard" })
       } else {
-        next("/user/DashboardUser.vue")
+        next({ name: "UserDashboard" })
       }
       return
     }
@@ -140,9 +140,9 @@ router.beforeEach(async (to, from, next) => {
   // Si está autenticado y trata de ir a login, redirigir al dashboard correspondiente
   if (to.name === "Login" && authStore.isAuthenticated) {
     if (authStore.user?.rol === "admin") {
-      next("/admin/DashboardView.vue")
+      next({ name: "AdminDashboard" })
     } else {
-      next("/user/DashboardView.vue")
+      next({ name: "UserDashboard" })
     }
     return
   }
