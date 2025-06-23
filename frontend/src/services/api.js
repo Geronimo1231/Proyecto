@@ -1,7 +1,7 @@
 "use client"
 
 import axios from "axios"
-import { useToast } from "vue-toastification"
+import { ToastPlugin } from 'vue3-toastify'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
@@ -11,7 +11,7 @@ const api = axios.create({
   },
 })
 
-const toast = useToast()
+const toast = ToastPlugin()
 
 // Interceptor para requests
 api.interceptors.request.use(

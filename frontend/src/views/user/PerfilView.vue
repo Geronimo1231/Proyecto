@@ -247,12 +247,12 @@ import { ref, onMounted } from 'vue'
 import { TruckIcon, MapPinIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
-import { useToast } from 'vue-toastification'
+import { ToastPlugin } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const authStore = useAuthStore()
-const toast = useToast()
+const toast = ToastPlugin()
 
 const profileLoading = ref(false)
 const passwordLoading = ref(false)

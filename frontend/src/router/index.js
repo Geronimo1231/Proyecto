@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from "vue-router"
-import { useAuthStore } from "../stores/auth"
+import { useAuthStore } from "../stores/auth.js"
 
 // Vistas globales
-import Home from "../views/Home.vue"
-import Login from "../views/Login.vue"
+import Home from "../views/HomeView.vue"
+import Login from "../views/LoginForm.vue"
 
 // Vistas de administrador
 import AdminLayout from "../layouts/AdminLayout.vue"
-import AdminDashboard from "../views/admin/Dashboard.vue"
-import AdminAsignaciones from "../views/admin/Asignaciones.vue"
-import AdminMapa from "../views/admin/Mapa.vue"
-import AdminRegistrar from "../views/admin/Registrar.vue"
-import AdminUsuarios from "../views/admin/Usuarios.vue"
-import AdminVehiculos from "../views/admin/Vehiculos.vue"
+import AdminDashboard from "../views/admin/DashboardView.vue"
+import AdminAsignaciones from "../views/admin/AsignacionesView.vue"
+import AdminMapa from "../views/admin/MapaView.vue"
+import AdminRegistrar from "../views/admin/RegistrarView.vue"
+import AdminUsuarios from "../views/admin/UsuariosView.vue"
+import AdminVehiculos from "../views/admin/VehiculosView.vue"
 
 // Vistas de usuario
 import UserLayout from "../layouts/UserLayout.vue"
-import UserDashboard from "../views/user/Dashboard.vue"
-import UserMapa from "../views/user/Mapa.vue"
-import UserPerfil from "../views/user/Perfil.vue"
-import UserVehiculos from "../views/user/Vehiculos.vue"
+import UserDashboard from "../views/user/DashboardUser.vue"
+import UserMapa from "../views/user/MapaviewUser.vue"
+import UserPerfil from "../views/user/PerfilView.vue"
+import UserVehiculos from "../views/user/VehiculoView.vue"
 
 const routes = [
   {
@@ -129,9 +129,9 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresRole && authStore.user?.rol !== to.meta.requiresRole) {
       // Redirigir según el rol del usuario
       if (authStore.user?.rol === "admin") {
-        next("/admin/dashboard")
+        next("/admin/DashboardView.vue")
       } else {
-        next("/user/dashboard")
+        next("/user/DashboardUser.vue")
       }
       return
     }
@@ -140,9 +140,9 @@ router.beforeEach(async (to, from, next) => {
   // Si está autenticado y trata de ir a login, redirigir al dashboard correspondiente
   if (to.name === "Login" && authStore.isAuthenticated) {
     if (authStore.user?.rol === "admin") {
-      next("/admin/dashboard")
+      next("/admin/DashboardView.vue")
     } else {
-      next("/user/dashboard")
+      next("/user/DashboardView.vue")
     }
     return
   }

@@ -136,13 +136,13 @@ import { useRoute } from 'vue-router'
 import { ArrowPathIcon, MapPinIcon } from '@heroicons/vue/24/outline'
 import L from 'leaflet'
 import api from '../../services/api'
-import { useToast } from 'vue-toastification'
+import { ToastPlugin } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import io from 'socket.io-client'
 
 const route = useRoute()
-const toast = useToast()
+const toast = ToastPlugin()
 
 const map = ref(null)
 const socket = ref(null)
@@ -152,7 +152,7 @@ const showHistory = ref(false)
 const locations = ref([])
 const vehicles = ref([])
 const markers = ref(new Map())
-const routes = ref(new Map())
+//const routes = ref(new Map())
 
 const filteredLocations = computed(() => {
   if (!selectedVehicleId.value) {

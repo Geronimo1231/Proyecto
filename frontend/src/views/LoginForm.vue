@@ -117,9 +117,9 @@ const handleLogin = async () => {
   if (result.success) {
     // Redirigir según el rol del usuario
     if (result.user.rol === 'admin') {
-      router.push('/admin/dashboard')
+      router.push('/admin/DashboardView.vue')
     } else {
-      router.push('/user/dashboard')
+      router.push('/user/DashboardUser.vue')
     }
   }
 }

@@ -104,7 +104,7 @@ import {
   MapPinIcon,
   UserPlusIcon,
   ClipboardDocumentListIcon,
-  ChartBarIcon
+  //ChartBarIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -114,12 +114,12 @@ const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Vehículos', href: '/admin/vehiculos', icon: TruckIcon },
-  { name: 'Usuarios', href: '/admin/usuarios', icon: UsersIcon },
-  { name: 'Asignaciones', href: '/admin/asignaciones', icon: ClipboardDocumentListIcon },
-  { name: 'Mapa GPS', href: '/admin/mapa', icon: MapPinIcon },
-  { name: 'Registrar', href: '/admin/registrar', icon: UserPlusIcon }
+  { name: 'Dashboard', href: '/admin/DashboardView.vue', icon: HomeIcon },
+  { name: 'Vehículos', href: '/admin/VehiculosView.vue', icon: TruckIcon },
+  { name: 'Usuarios', href: '/admin/UsuariosView.vue', icon: UsersIcon },
+  { name: 'Asignaciones', href: '/admin/AsignacionesView.vue', icon: ClipboardDocumentListIcon },
+  { name: 'Mapa GPS', href: '/admin/MapaView.vue', icon: MapPinIcon },
+  { name: 'Registrar', href: '/admin/RegistrarView.vue', icon: UserPlusIcon }
 ]
 
 const logout = () => {
