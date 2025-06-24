@@ -230,12 +230,11 @@ import { ref, onMounted } from 'vue'
 import { TruckIcon, MapPinIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const authStore = useAuthStore()
-const toast = ToastPlugin()
 
 const userStats = ref({})
 const vehiculos = ref([])

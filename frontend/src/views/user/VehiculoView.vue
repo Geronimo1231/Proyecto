@@ -247,8 +247,7 @@ import { TruckIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ToastPlugin } from 'vue3-toastify'
-const toast = ToastPlugin()
+import { toast } from 'vue3-toastify'
 
 const vehiculos = ref([])
 const showDetailsModal = ref(false)

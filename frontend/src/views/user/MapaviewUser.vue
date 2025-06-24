@@ -136,13 +136,12 @@ import { useRoute } from 'vue-router'
 import { ArrowPathIcon, MapPinIcon } from '@heroicons/vue/24/outline'
 import L from 'leaflet'
 import api from '../../services/api'
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import io from 'socket.io-client'
 
 const route = useRoute()
-const toast = ToastPlugin()
 
 const map = ref(null)
 const socket = ref(null)

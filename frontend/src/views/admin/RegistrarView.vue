@@ -285,11 +285,10 @@
 import { ref, onMounted } from 'vue'
 import { PlusIcon, TruckIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-const toast = ToastPlugin()
 
 const roles = ref([])
 const marcas = ref([])

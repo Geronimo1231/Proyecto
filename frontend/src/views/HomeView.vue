@@ -36,7 +36,7 @@
             to="/login"
             class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 inline-flex items-center justify-center"
           >
-            <LoginIcon class="h-5 w-5 mr-2" />
+            <ArrowRightOnRectangleIcon class="h-5 w-5 mr-2" />
             Acceder al Sistema
           </router-link>
         </div>
@@ -78,7 +78,7 @@
 <script setup>
 import { 
   TruckIcon, 
-  LoginIcon, 
+  ArrowRightOnRectangleIcon,
   MapPinIcon, 
   UsersIcon, 
   ChartBarIcon 
