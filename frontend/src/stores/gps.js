@@ -4,7 +4,7 @@ import { defineStore } from "pinia"
 import { ref, computed } from "vue"
 import api from "../services/api"
 import io from "socket.io-client"
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 //import { useGpsStore } from "@/stores/gps"
 
 const gpsStore = useGpsStore()
@@ -13,7 +13,6 @@ console.log(gpsStore.ubicaciones) // o gpsStore.metodo(), etc.
 
 
 const useGpsStore = defineStore("gps", () => {
-  const toast = ToastPlugin()
   const locations = ref([])
   const loading = ref(false)
   const socket = ref(null)

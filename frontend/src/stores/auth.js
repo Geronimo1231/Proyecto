@@ -3,10 +3,11 @@
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
 import api from "../services/api"
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
+
 
 export const useAuthStore = defineStore("auth", () => {
-  const toast = ToastPlugin()
   const user = ref(null)
   const token = ref(localStorage.getItem("token"))
   const loading = ref(false)

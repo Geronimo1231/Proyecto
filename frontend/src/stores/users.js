@@ -3,14 +3,13 @@
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
 import api from "../services/api"
-import { ToastPlugin } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
 //import { useUsersStore } from '@/stores/users' 
 
 const usersStore = useUsersStore()
 console.log(usersStore.users)
 
 const useUsersStore = defineStore("users", () => {
-  const toast = ToastPlugin()
   const users = ref([])
   const loading = ref(false)
   const selectedUser = ref(null)
