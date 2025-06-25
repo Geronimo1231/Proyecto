@@ -9,15 +9,15 @@ export const Rol = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    nombre: {
+    name: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
       validate: {
-        notEmpty: { msg: "El nombre del rol es obligatorio" },
+        notEmpty: { msg: "El name del rol es obligatorio" },
       },
     },
-    descripcion: {
+    Description: {
       type: DataTypes.TEXT,
     },
   },

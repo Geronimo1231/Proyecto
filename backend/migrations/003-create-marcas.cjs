@@ -7,7 +7,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nombre: {
+      name: {
         type: Sequelize.STRING(100),
         allowNull: false,
         unique: true,
@@ -21,21 +21,21 @@ module.exports = {
 
     // Insertar marcas por defecto
     await queryInterface.bulkInsert("marcas", [
-      { nombre: "Toyota", created_at: new Date() },
-      { nombre: "Honda", created_at: new Date() },
-      { nombre: "Ford", created_at: new Date() },
-      { nombre: "Chevrolet", created_at: new Date() },
-      { nombre: "Nissan", created_at: new Date() },
-      { nombre: "Volkswagen", created_at: new Date() },
-      { nombre: "BMW", created_at: new Date() },
-      { nombre: "Mercedes-Benz", created_at: new Date() },
-      { nombre: "Audi", created_at: new Date() },
-      { nombre: "Hyundai", created_at: new Date() },
-      { nombre: "Kia", created_at: new Date() },
-      { nombre: "Mazda", created_at: new Date() },
-      { nombre: "Subaru", created_at: new Date() },
-      { nombre: "Jeep", created_at: new Date() },
-      { nombre: "Ram", created_at: new Date() },
+      { name: "Toyota", created_at: new Date() },
+      { name: "Honda", created_at: new Date() },
+      { name: "Ford", created_at: new Date() },
+      { name: "Chevrolet", created_at: new Date() },
+      { name: "Nissan", created_at: new Date() },
+      { name: "Volkswagen", created_at: new Date() },
+      { name: "BMW", created_at: new Date() },
+      { name: "Mercedes-Benz", created_at: new Date() },
+      { name: "Audi", created_at: new Date() },
+      { name: "Hyundai", created_at: new Date() },
+      { name: "Kia", created_at: new Date() },
+      { name: "Mazda", created_at: new Date() },
+      { name: "Subaru", created_at: new Date() },
+      { name: "Jeep", created_at: new Date() },
+      { name: "Ram", created_at: new Date() },
     ])
   },
 

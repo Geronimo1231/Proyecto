@@ -74,7 +74,7 @@ export const getRecentActivity = async (req, res) => {
     const activities = recentAssignments.map((assignment) => ({
       id: assignment.id,
       type: assignment.isActive ? "assignment" : "unassignment",
-      description: assignment.isActive
+      Description: assignment.isActive
         ? `Vehículo ${assignment.vehicle.licensePlate} asignado a ${assignment.user.firstName} ${assignment.user.lastName}`
         : `Vehículo ${assignment.vehicle.licensePlate} desasignado de ${assignment.user.firstName} ${assignment.user.lastName}`,
       createdAt: assignment.createdAt,
@@ -163,7 +163,7 @@ export const getUserActivity = async (req, res) => {
     const activities = userAssignments.map((assignment) => ({
       id: assignment.id,
       type: assignment.isActive ? "vehicle_assigned" : "vehicle_unassigned",
-      description: assignment.isActive
+      Description: assignment.isActive
         ? `Te asignaron el vehículo ${assignment.vehicle.licensePlate}`
         : `Se desasignó el vehículo ${assignment.vehicle.licensePlate}`,
       createdAt: assignment.createdAt,

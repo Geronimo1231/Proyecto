@@ -81,6 +81,7 @@ module.exports = {
         speed: 35.8,
         direction: 270.0,
         gpsTimestamp: new Date(),
+        createdAt: new Date(),
         updatedAt: new Date(),
       },
     ])

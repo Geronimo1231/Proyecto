@@ -4,20 +4,20 @@ dotenv.config()
 
 export const config = {
   database: {
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 8080,
-    name: process.env.DB_NAME || "vehicle_management",
-    user: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "12345",
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    name: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
   },
   jwt: {
-    secret: process.env.JWT_SECRET || "tu_clave_secreta_muy_segura",
-    expiresIn: process.env.JWT_EXPIRES_IN || "12h",
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN,
   },
   server: {
-    port: process.env.PORT || 8080,
-    nodeEnv: process.env.NODE_ENV || "development",
-    frontendUrl: process.env.FRONTEND_URL || "http://localhost:8080",
+    port: process.env.PORT,
+    nodeEnv: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL,
   },
   upload: {
     path: process.env.UPLOAD_PATH || "./uploads",

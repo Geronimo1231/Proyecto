@@ -4,13 +4,15 @@ import dotenv from "dotenv"
 import { sequelize } from "./config/database.js"
 import "./models/index.js"
 
-// Importar rutas
-import authRoutes from "./routes/auth.js"
-import vehicleRoutes from "./routes/vehicles.js"
+import configFile from "./config/config.cjs"
+const appConfig = configFile.app
+
+console.log("JWT SECRET:", appConfig.jwt.secret)
 
 // Cargar variables de entorno
 dotenv.config()
 
+// Este es el servidor Express
 const app = express()
 const PORT = process.env.PORT || 8080
 
@@ -20,6 +22,9 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Rutas
+import authRoutes from "./routes/auth.js"
+import vehicleRoutes from "./routes/vehicles.js"
+
 app.use("/api/auth", authRoutes)
 app.use("/api/vehicles", vehicleRoutes)
 

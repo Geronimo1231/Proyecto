@@ -9,12 +9,12 @@ export const Marca = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    nombre: {
+    name: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
       validate: {
-        notEmpty: { msg: "El nombre de la marca es obligatorio" },
+        notEmpty: { msg: "El name de la marca es obligatorio" },
       },
     },
   },

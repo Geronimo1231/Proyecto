@@ -9,12 +9,12 @@ export const Usuario = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    nombre: {
+    name: {
       type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
-        notEmpty: { msg: "El nombre es obligatorio" },
-        len: { args: [2, 100], msg: "El nombre debe tener entre 2 y 100 caracteres" },
+        notEmpty: { msg: "El name es obligatorio" },
+        len: { args: [2, 100], msg: "El name debe tener entre 2 y 100 caracteres" },
       },
     },
     apellido: {

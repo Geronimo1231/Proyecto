@@ -30,14 +30,14 @@ module.exports = {
     // Insertar roles por defecto
     await queryInterface.bulkInsert("roles", [
       {
-        nombre: "admin",
-        descripcion: "Administrador del sistema con acceso completo",
+        name: "admin",
+        Description: "Administrador del sistema con acceso completo",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        nombre: "usuario",
-        descripcion: "Usuario estándar con acceso limitado",
+        name: "usuario",
+        Description: "Usuario estándar con acceso limitado",
         created_at: new Date(),
         updated_at: new Date(),
       },

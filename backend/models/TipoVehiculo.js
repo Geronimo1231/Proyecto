@@ -9,15 +9,15 @@ export const TipoVehiculo = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    nombre: {
+    name: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
       validate: {
-        notEmpty: { msg: "El nombre del tipo de vehículo es obligatorio" },
+        notEmpty: { msg: "El name del tipo de vehículo es obligatorio" },
       },
     },
-    descripcion: {
+    Description: {
       type: DataTypes.TEXT,
     },
   },
