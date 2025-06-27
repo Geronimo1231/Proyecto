@@ -36,7 +36,7 @@ const GpsLocation = sequelize.define(
     },
   },
   {
-    tableName: "gps_locations",
+    tableName: "Gpslocations",
     timestamps: true,
   },
 )

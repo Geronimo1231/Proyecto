@@ -118,8 +118,9 @@ const handleLogin = async () => {
     // Redirigir según el rol del usuario
     if (result.user.role === 'admin') {
       router.push({name: 'AdminDashboard'})
+      //router.push('/admin')
     } else {
-      router.push('/user')
+      router.push({name: 'UserDashboard'})
     }
   }
 }

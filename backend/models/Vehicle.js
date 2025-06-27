@@ -62,7 +62,7 @@ const Vehicle = sequelize.define(
     },
   },
   {
-    tableName: "vehicles",
+    tableName: "Vehicles",
     timestamps: true,
     paranoid: true,
   },
