@@ -255,7 +255,7 @@ const selectedVehicle = ref(null)
 
 const fetchVehicles = async () => {
   try {
-    const response = await api.get('/user/vehicles')
+    const response = await api.get('/user/vehiculos')
     vehiculos.value = response.data.data
   } catch (error) {
     toast.error('Error al cargar los vehículos')

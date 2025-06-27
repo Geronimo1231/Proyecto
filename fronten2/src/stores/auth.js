@@ -122,3 +122,4 @@ export const useAuthStore = defineStore("auth", () => {
     changePassword,
   }
 })
+

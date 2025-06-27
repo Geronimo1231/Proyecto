@@ -19,7 +19,7 @@ export const useVehiclesStore = defineStore("vehicles", () => {
     try {
       loading.value = true
       const params = new URLSearchParams(filters).toString()
-      const response = await api.get(`/vehicles${params ? `?${params}` : ""}`)
+      const response = await api.get(`/vehiculos${params ? `?${params}` : ""}`)
       vehicles.value = response.data.data
       return { success: true, data: response.data.data }
     } catch (error) {
@@ -33,7 +33,7 @@ export const useVehiclesStore = defineStore("vehicles", () => {
   const createVehicle = async (vehicleData) => {
     try {
       loading.value = true
-      const response = await api.post("/vehicles", vehicleData)
+      const response = await api.post("/vehiculos", vehicleData)
       vehicles.value.push(response.data.data)
       toast.success("Vehículo creado correctamente")
       return { success: true, data: response.data.data }
@@ -48,7 +48,7 @@ export const useVehiclesStore = defineStore("vehicles", () => {
   const updateVehicle = async (id, vehicleData) => {
     try {
       loading.value = true
-      const response = await api.put(`/vehicles/${id}`, vehicleData)
+      const response = await api.put(`/vehiculos/${id}`, vehicleData)
       const index = vehicles.value.findIndex((v) => v.id === id)
       if (index !== -1) {
         vehicles.value[index] = response.data.data
@@ -66,7 +66,7 @@ export const useVehiclesStore = defineStore("vehicles", () => {
   const deleteVehicle = async (id) => {
     try {
       loading.value = true
-      await api.delete(`/vehicles/${id}`)
+      await api.delete(`/vehiculos/${id}`)
       vehicles.value = vehicles.value.filter((v) => v.id !== id)
       toast.success("Vehículo eliminado correctamente")
       return { success: true }
