@@ -23,7 +23,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Mis Vehículos</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ userStats.vehiculos_asignados || 0 }}</dd>
+                <dd class="text-lg font-medium text-gray-900">{{ userStats.vehicle_asignados || 0 }}</dd>
               </dl>
             </div>
           </div>
@@ -70,7 +70,7 @@
       <div class="px-4 py-5 sm:p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Mis Vehículos Asignados</h3>
         
-        <div v-if="vehiculos.length === 0" class="text-center py-8">
+        <div v-if="vehicle.length === 0" class="text-center py-8">
           <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
           <h3 class="mt-2 text-sm font-medium text-gray-900">No tienes vehículos asignados</h3>
           <p class="mt-1 text-sm text-gray-500">
@@ -80,7 +80,7 @@
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
-            v-for="vehiculo in vehiculos"
+            v-for="vehiculo in vehicle"
             :key="vehiculo.id"
             class="border rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
           >
@@ -237,21 +237,21 @@ import { es } from 'date-fns/locale'
 const authStore = useAuthStore()
 
 const userStats = ref({})
-const vehiculos = ref([])
+const vehicle = ref([])
 const recentActivity = ref([])
 const showDetailsModal = ref(false)
 const selectedVehicle = ref(null)
 
 const fetchUserData = async () => {
   try {
-    const [statsRes, vehiculosRes, activityRes] = await Promise.all([
+    const [statsRes, vehicleRes, activityRes] = await Promise.all([
       api.get('/user/stats'),
-      api.get('/user/vehiculos'),
+      api.get('/user/vehicle'),
       api.get('/user/activity')
     ])
     
     userStats.value = statsRes.data.data
-    vehiculos.value = vehiculosRes.data.data
+    vehicle.value = vehicleRes.data.data
     recentActivity.value = activityRes.data.data
   } catch (error) {
     toast.error('Error al cargar los datos')

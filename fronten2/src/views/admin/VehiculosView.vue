@@ -69,7 +69,7 @@
     <!-- Vehicles Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-for="vehiculo in filteredVehiculos"
+        v-for="vehiculo in filteredvehicle"
         :key="vehiculo.id"
         class="bg-white shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
       >
@@ -93,9 +93,9 @@
           <p class="text-sm text-gray-600 mb-1">{{ vehiculo.marca }} {{ vehiculo.modelo }}</p>
           <p class="text-sm text-gray-600 mb-2">Año: {{ vehiculo.año }}</p>
           
-          <div v-if="vehiculo.asignacion_actual" class="mb-3 p-2 bg-blue-50 rounded">
+          <div v-if="vehiculo.assignment_actual" class="mb-3 p-2 bg-blue-50 rounded">
             <p class="text-xs text-blue-700">
-              <strong>Asignado a:</strong> {{ vehiculo.asignacion_actual.usuario_nombre }}
+              <strong>Asignado a:</strong> {{ vehiculo.assignment_actual.usuario_nombre }}
             </p>
           </div>
 
@@ -169,7 +169,7 @@
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="">Seleccionar tipo</option>
-                      <option v-for="tipo in tiposVehiculos" :key="tipo.id" :value="tipo.id">
+                      <option v-for="tipo in tiposvehicle" :key="tipo.id" :value="tipo.id">
                         {{ tipo.nombre }}
                       </option>
                     </select>
@@ -273,9 +273,9 @@ import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
 
-const vehiculos = ref([])
+const vehicle = ref([])
 const marcas = ref([])
-const tiposVehiculos = ref([])
+const tiposvehicle = ref([])
 const loading = ref(false)
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -298,8 +298,8 @@ const vehicleForm = ref({
   kilometraje: 0
 })
 
-const filteredVehiculos = computed(() => {
-  return vehiculos.value.filter(vehiculo => {
+const filteredvehicle = computed(() => {
+  return vehicle.value.filter(vehiculo => {
     const matchesSearch = !filters.value.search || 
       vehiculo.matricula.toLowerCase().includes(filters.value.search.toLowerCase()) ||
       vehiculo.modelo.toLowerCase().includes(filters.value.search.toLowerCase())
@@ -313,15 +313,15 @@ const filteredVehiculos = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [vehiculosRes, marcasRes, tiposRes] = await Promise.all([
-      api.get('/vehiculos'),
+    const [vehicleRes, marcasRes, tiposRes] = await Promise.all([
+      api.get('/vehicle'),
       api.get('/marcas'),
-      api.get('/tipos-vehiculos')
+      api.get('/tipos-vehicle')
     ])
     
-    vehiculos.value = vehiculosRes.data.data
+    vehicle.value = vehicleRes.data.data
     marcas.value = marcasRes.data.data
-    tiposVehiculos.value = tiposRes.data.data
+    tiposvehicle.value = tiposRes.data.data
   } catch (error) {
     toast.error('Error al cargar los datos')
   }
@@ -332,10 +332,10 @@ const saveVehicle = async () => {
     loading.value = true
     
     if (showEditModal.value) {
-      await api.put(`/vehiculos/${vehicleForm.value.id}`, vehicleForm.value)
+      await api.put(`/vehicle/${vehicleForm.value.id}`, vehicleForm.value)
       toast.success('Vehículo actualizado correctamente')
     } else {
-      await api.post('/vehiculos', vehicleForm.value)
+      await api.post('/vehicle', vehicleForm.value)
       toast.success('Vehículo agregado correctamente')
     }
     
@@ -356,7 +356,7 @@ const editVehicle = (vehiculo) => {
 const deleteVehicle = async (vehiculo) => {
   if (confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.matricula}?`)) {
     try {
-      await api.delete(`/vehiculos/${vehiculo.id}`)
+      await api.delete(`/vehicle/${vehiculo.id}`)
       toast.success('Vehículo eliminado correctamente')
       await fetchData()
     } catch (error) {

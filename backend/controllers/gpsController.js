@@ -3,6 +3,7 @@ import { logger } from "../config/database.js"
 import { Op } from "sequelize"
 import { emitGpsUpdate, emitBulkGpsUpdate } from "../server.js"
 
+
 export const getAllGpsLocations = async (req, res) => {
   try {
     const { vehicleId, startDate, endDate, page = 1, limit = 100 } = req.query

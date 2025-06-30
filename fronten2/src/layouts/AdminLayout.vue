@@ -114,7 +114,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const sidebarOpen = ref(true)
-const showProfileMenu = ref(false)
+const showProfileMenu = ref(true)
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },

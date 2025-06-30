@@ -1,6 +1,7 @@
 import { User, Vehicle, Assignment, GpsLocation } from "../models/index.js"
 import { logger } from "../config/database.js"
-import { Op, sequelize } from "sequelize"
+import { Op } from "sequelize"
+import sequelize from "../config/database.js" 
 
 export const getDashboardStats = async (req, res) => {
   try {

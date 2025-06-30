@@ -87,54 +87,54 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="asignacion in filteredAsignaciones" :key="asignacion.id">
+          <tr v-for="assignment in filteredassignmentes" :key="assignment.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
-                    :src="asignacion.usuario?.foto_perfil || '/placeholder.svg?height=40&width=40'"
-                    :alt="asignacion.usuario?.nombre"
+                    :src="assignment.usuario?.foto_perfil || '/placeholder.svg?height=40&width=40'"
+                    :alt="assignment.usuario?.nombre"
                   />
                 </div>
                 <div class="ml-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{ asignacion.usuario?.nombre }} {{ asignacion.usuario?.apellido }}
+                    {{ assignment.usuario?.nombre }} {{ assignment.usuario?.apellido }}
                   </div>
-                  <div class="text-sm text-gray-500">{{ asignacion.usuario?.email }}</div>
+                  <div class="text-sm text-gray-500">{{ assignment.usuario?.email }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ asignacion.vehiculo?.matricula }}</div>
+              <div class="text-sm font-medium text-gray-900">{{ assignment.vehiculo?.matricula }}</div>
               <div class="text-sm text-gray-500">
-                {{ asignacion.vehiculo?.marca?.nombre }} {{ asignacion.vehiculo?.modelo }}
+                {{ assignment.vehiculo?.marca?.nombre }} {{ assignment.vehiculo?.modelo }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(asignacion.fecha_asignacion) }}
+              {{ formatDate(assignment.fecha_assignment) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="asignacion.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                :class="assignment.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
               >
-                {{ asignacion.activa ? 'Activa' : 'Inactiva' }}
+                {{ assignment.activa ? 'Activa' : 'Inactiva' }}
               </span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-              {{ asignacion.observaciones || 'Sin observaciones' }}
+              {{ assignment.observaciones || 'Sin observaciones' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
               <button
-                v-if="asignacion.activa"
-                @click="unassignVehicle(asignacion)"
+                v-if="assignment.activa"
+                @click="unassignVehicle(assignment)"
                 class="text-red-600 hover:text-red-900"
               >
                 Desasignar
               </button>
               <button
-                @click="editAssignment(asignacion)"
+                @click="editAssignment(assignment)"
                 class="text-blue-600 hover:text-blue-900"
               >
                 Editar
@@ -164,7 +164,7 @@
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   >
                     <option value="">Seleccionar usuario</option>
-                    <option v-for="usuario in usuariosDisponibles" :key="usuario.id" :value="usuario.id">
+                    <option v-for="usuario in usersDisponibles" :key="usuario.id" :value="usuario.id">
                       {{ usuario.nombre }} {{ usuario.apellido }} ({{ usuario.email }})
                     </option>
                   </select>
@@ -178,7 +178,7 @@
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   >
                     <option value="">Seleccionar vehículo</option>
-                    <option v-for="vehiculo in vehiculosDisponibles" :key="vehiculo.id" :value="vehiculo.id">
+                    <option v-for="vehiculo in vehicleDisponibles" :key="vehiculo.id" :value="vehiculo.id">
                       {{ vehiculo.matricula }} - {{ vehiculo.marca?.nombre }} {{ vehiculo.modelo }}
                     </option>
                   </select>
@@ -228,9 +228,9 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 
-const asignaciones = ref([])
-const usuariosDisponibles = ref([])
-const vehiculosDisponibles = ref([])
+const assignmentes = ref([])
+const usersDisponibles = ref([])
+const vehicleDisponibles = ref([])
 const loading = ref(false)
 const showAssignModal = ref(false)
 
@@ -246,17 +246,17 @@ const assignForm = ref({
   observaciones: ''
 })
 
-const filteredAsignaciones = computed(() => {
-  return asignaciones.value.filter(asignacion => {
+const filteredassignmentes = computed(() => {
+  return assignmentes.value.filter(assignment => {
     const matchesUsuario = !filters.value.usuario || 
-      `${asignacion.usuario?.nombre} ${asignacion.usuario?.apellido}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
+      `${assignment.usuario?.nombre} ${assignment.usuario?.apellido}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
     
     const matchesVehiculo = !filters.value.vehiculo || 
-      asignacion.vehiculo?.matricula.toLowerCase().includes(filters.value.vehiculo.toLowerCase()) ||
-      asignacion.vehiculo?.modelo.toLowerCase().includes(filters.value.vehiculo.toLowerCase())
+      assignment.vehiculo?.matricula.toLowerCase().includes(filters.value.vehiculo.toLowerCase()) ||
+      assignment.vehiculo?.modelo.toLowerCase().includes(filters.value.vehiculo.toLowerCase())
     
     const matchesEstado = filters.value.estado === '' || 
-      asignacion.activa.toString() === filters.value.estado
+      assignment.activa.toString() === filters.value.estado
     
     return matchesUsuario && matchesVehiculo && matchesEstado
   })
@@ -264,15 +264,15 @@ const filteredAsignaciones = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [asignacionesRes, usuariosRes, vehiculosRes] = await Promise.all([
-      api.get('/asignaciones'),
-      api.get('/usuarios?rol=usuario&activo=true'),
-      api.get('/vehiculos?estado=disponible')
+    const [assignmentesRes, usersRes, vehicleRes] = await Promise.all([
+      api.get('/assigments'),
+      api.get('/users?rol=usuario&activo=true'),
+      api.get('/vehicle?estado=disponible')
     ])
     
-    asignaciones.value = asignacionesRes.data.data
-    usuariosDisponibles.value = usuariosRes.data.data
-    vehiculosDisponibles.value = vehiculosRes.data.data
+    assignmentes.value = assignmentesRes.data.data
+    usersDisponibles.value = usersRes.data.data
+    vehicleDisponibles.value = vehicleRes.data.data
   } catch (error) {
     toast.error('Error al cargar los datos')
   }
@@ -281,7 +281,7 @@ const fetchData = async () => {
 const assignVehicle = async () => {
   try {
     loading.value = true
-    await api.post('/asignaciones', assignForm.value)
+    await api.post('/assignmentes', assignForm.value)
     toast.success('Vehículo asignado correctamente')
     await fetchData()
     closeAssignModal()
@@ -292,10 +292,10 @@ const assignVehicle = async () => {
   }
 }
 
-const unassignVehicle = async (asignacion) => {
-  if (confirm(`¿Estás seguro de desasignar el vehículo ${asignacion.vehiculo?.matricula}?`)) {
+const unassignVehicle = async (assignment) => {
+  if (confirm(`¿Estás seguro de desasignar el vehículo ${assignment.vehiculo?.matricula}?`)) {
     try {
-      await api.patch(`/asignaciones/${asignacion.id}/unassign`)
+      await api.patch(`/assignmentes/${assignment.id}/unassign`)
       toast.success('Vehículo desasignado correctamente')
       await fetchData()
     } catch (error) {
@@ -304,9 +304,9 @@ const unassignVehicle = async (asignacion) => {
   }
 }
 
-const editAssignment = (asignacion) => {
+const editAssignment = (assignment) => {
   // Implementar edición de asignación
-  console.log('Editar asignación:', asignacion)
+  console.log('Editar asignación:', assignment)
 }
 
 const closeAssignModal = () => {

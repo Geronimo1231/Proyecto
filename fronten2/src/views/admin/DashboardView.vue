@@ -20,7 +20,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Total Vehículos</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ stats.total_vehiculos || 0 }}</dd>
+                <dd class="text-lg font-medium text-gray-900">{{ stats.total_vehicle || 0 }}</dd>
               </dl>
             </div>
           </div>
@@ -36,7 +36,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Disponibles</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ stats.vehiculos_disponibles || 0 }}</dd>
+                <dd class="text-lg font-medium text-gray-900">{{ stats.vehicle_disponibles || 0 }}</dd>
               </dl>
             </div>
           </div>
@@ -52,7 +52,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Asignados</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ stats.vehiculos_asignados || 0 }}</dd>
+                <dd class="text-lg font-medium text-gray-900">{{ stats.vehicle_asignados || 0 }}</dd>
               </dl>
             </div>
           </div>
@@ -68,7 +68,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Total Usuarios</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ stats.total_usuarios || 0 }}</dd>
+                <dd class="text-lg font-medium text-gray-900">{{ stats.total_users || 0 }}</dd>
               </dl>
             </div>
           </div>
@@ -172,10 +172,10 @@ const vehicleStatusData = computed(() => ({
   labels: ['Disponibles', 'Asignados', 'Mantenimiento', 'Fuera de Servicio'],
   datasets: [{
     data: [
-      stats.value.vehiculos_disponibles || 0,
-      stats.value.vehiculos_asignados || 0,
-      stats.value.vehiculos_mantenimiento || 0,
-      stats.value.vehiculos_fuera_servicio || 0
+      stats.value.vehicle_disponibles || 0,
+      stats.value.vehicle_asignados || 0,
+      stats.value.vehicle_mantenimiento || 0,
+      stats.value.vehicle_fuera_servicio || 0
     ],
     backgroundColor: [
       '#10B981',
@@ -187,10 +187,10 @@ const vehicleStatusData = computed(() => ({
 }))
 
 const vehicleBrandData = computed(() => ({
-  labels: stats.value.marcas_vehiculos?.map(m => m.marca) || [],
+  labels: stats.value.marcas_vehicle?.map(m => m.marca) || [],
   datasets: [{
     label: 'Cantidad',
-    data: stats.value.marcas_vehiculos?.map(m => m.cantidad) || [],
+    data: stats.value.marcas_vehicle?.map(m => m.cantidad) || [],
     backgroundColor: '#3B82F6'
   }]
 }))

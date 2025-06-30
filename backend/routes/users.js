@@ -8,11 +8,11 @@ import {
   getUserStats,
   getUserVehicles,
 } from "../controllers/userController.js"
-import { requireAdmin } from "../middleware/auth.js"
+import { requireAdmin , authenticateToken } from "../middleware/auth.js"
 import { validateUser } from "../middleware/validation.js"
 
 const router = express.Router()
-
+router.use(authenticateToken)
 // Rutas para usuarios normales
 router.get("/stats", getUserStats)
 router.get("/vehicles", getUserVehicles)

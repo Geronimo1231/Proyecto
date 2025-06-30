@@ -13,7 +13,7 @@
     </div>
 
     <!-- Vehicles Grid -->
-    <div v-if="vehiculos.length === 0" class="text-center py-12">
+    <div v-if="vehicle.length === 0" class="text-center py-12">
       <TruckIcon class="mx-auto h-12 w-12 text-gray-400" />
       <h3 class="mt-2 text-sm font-medium text-gray-900">No tienes vehículos asignados</h3>
       <p class="mt-1 text-sm text-gray-500">
@@ -23,7 +23,7 @@
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-for="vehiculo in vehiculos"
+        v-for="vehiculo in vehicle"
         :key="vehiculo.id"
         class="bg-white shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
       >
@@ -249,14 +249,14 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'vue3-toastify'
 
-const vehiculos = ref([])
+const vehicle = ref([])
 const showDetailsModal = ref(false)
 const selectedVehicle = ref(null)
 
 const fetchVehicles = async () => {
   try {
-    const response = await api.get('/user/vehiculos')
-    vehiculos.value = response.data.data
+    const response = await api.get('/user/vehicle')
+    vehicle.value = response.data.data
   } catch (error) {
     toast.error('Error al cargar los vehículos')
   }

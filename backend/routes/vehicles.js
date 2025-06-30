@@ -7,9 +7,10 @@ import {
   deleteVehicle,
 } from "../controllers/vehicleController.js"
 import { validateVehicle } from "../middleware/validation.js"
-import { requireRole } from "../middleware/auth.js"
+import { requireRole , authenticateToken} from "../middleware/auth.js"
 
 const router = express.Router()
+router.use(authenticateToken)
 
 router.get("/", getAllVehicles)
 router.get("/:id", getVehicleById)

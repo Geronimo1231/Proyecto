@@ -6,11 +6,11 @@ import {
   getUserAssignments,
   getAssignmentById,
 } from "../controllers/assignmentController.js"
-import { requireAdmin } from "../middleware/auth.js"
+import { requireAdmin , authenticateToken  } from "../middleware/auth.js"
 import { validateAssignment } from "../middleware/validation.js"
 
 const router = express.Router()
-
+router.use(authenticateToken)
 // Rutas para usuarios normales
 router.get("/my", getUserAssignments)
 

@@ -78,7 +78,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="usuario in filteredUsuarios" :key="usuario.id">
+          <tr v-for="usuario in filteredusers" :key="usuario.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
@@ -108,7 +108,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ usuario.vehiculos_asignados || 0 }}
+              {{ usuario.vehicle_asignados || 0 }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
@@ -250,7 +250,7 @@ import { PlusIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
-const usuarios = ref([])
+const users = ref([])
 const roles = ref([])
 const loading = ref(false)
 const showAddModal = ref(false)
@@ -270,8 +270,8 @@ const userForm = ref({
   rol_id: ''
 })
 
-const filteredUsuarios = computed(() => {
-  return usuarios.value.filter(usuario => {
+const filteredusers = computed(() => {
+  return users.value.filter(usuario => {
     const matchesSearch = !filters.value.search || 
       usuario.nombre.toLowerCase().includes(filters.value.search.toLowerCase()) ||
       usuario.apellido.toLowerCase().includes(filters.value.search.toLowerCase()) ||
@@ -285,12 +285,12 @@ const filteredUsuarios = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [usuariosRes, rolesRes] = await Promise.all([
-      api.get('/usuarios'),
+    const [usersRes, rolesRes] = await Promise.all([
+      api.get('/users'),
       api.get('/roles')
     ])
     
-    usuarios.value = usuariosRes.data.data
+    users.value = usersRes.data.data
     roles.value = rolesRes.data.data
   } catch (error) {
     toast.error('Error al cargar los datos')
@@ -302,10 +302,10 @@ const saveUser = async () => {
     loading.value = true
     
     if (showEditModal.value) {
-      await api.put(`/usuarios/${userForm.value.id}`, userForm.value)
+      await api.put(`/users/${userForm.value.id}`, userForm.value)
       toast.success('Usuario actualizado correctamente')
     } else {
-      await api.post('/usuarios', userForm.value)
+      await api.post('/users', userForm.value)
       toast.success('Usuario agregado correctamente')
     }
     
@@ -325,7 +325,7 @@ const editUser = (usuario) => {
 
 const toggleUserStatus = async (usuario) => {
   try {
-    await api.patch(`/usuarios/${usuario.id}/toggle-status`)
+    await api.patch(`/users/${usuario.id}/toggle-status`)
     toast.success(`Usuario ${usuario.activo ? 'desactivado' : 'activado'} correctamente`)
     await fetchData()
   } catch (error) {

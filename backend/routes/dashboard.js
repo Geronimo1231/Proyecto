@@ -6,9 +6,11 @@ import {
   getUserActivity,
   getSystemHealth,
 } from "../controllers/dashboardController.js"
-import { requireAdmin } from "../middleware/auth.js"
+import { requireAdmin, authenticateToken } from "../middleware/auth.js"
 
 const router = express.Router()
+
+router.use(authenticateToken)
 
 // Rutas para usuarios normales
 router.get("/user/stats", getUserDashboardStats)

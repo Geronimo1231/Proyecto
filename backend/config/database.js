@@ -9,8 +9,8 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD || "",
   {
     host: process.env.DB_HOST || "localhost",
-     port: process.env.DB_PORT || 5432,
-    dialect: "postgres",  
+    port: process.env.DB_PORT || 5432,
+    dialect: "postgres",
     logging: process.env.NODE_ENV === "development" ? console.log : false,
     pool: {
       max: 10,
@@ -24,8 +24,16 @@ const sequelize = new Sequelize(
       underscored: false,
       freezeTableName: true,
     },
-  },
+  }
 )
 
 export { sequelize }
+
+// ✅ Agregado: logger básico
+export const logger = {
+  info: (msg) => console.log("[INFO]:", msg),
+  error: (msg) => console.error("[ERROR]:", msg)
+}
+
+// También mantenemos el default export
 export default sequelize

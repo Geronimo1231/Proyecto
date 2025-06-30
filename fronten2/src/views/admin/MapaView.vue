@@ -113,7 +113,7 @@
               {{ location.vehiculo?.marca?.nombre }} {{ location.vehiculo?.modelo }}
             </p>
             <p class="text-sm text-gray-600 mb-2">
-              <strong>Usuario:</strong> {{ location.vehiculo?.asignacion_actual?.usuario_nombre || 'Sin asignar' }}
+              <strong>Usuario:</strong> {{ location.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar' }}
             </p>
             <div class="text-xs text-gray-500">
               <p><strong>Lat:</strong> {{ location.latitud.toFixed(6) }}</p>
@@ -154,7 +154,7 @@ const markers = ref(new Map())
 const filteredLocations = computed(() => {
   return locations.value.filter(location => {
     const matchesUser = !selectedUser.value || 
-      location.vehiculo?.asignacion_actual?.usuario_id == selectedUser.value
+      location.vehiculo?.assignment_actual?.usuario_id == selectedUser.value
     
     const matchesVehicle = !selectedVehicle.value || 
       location.vehiculo_id == selectedVehicle.value
@@ -190,9 +190,9 @@ const initSocket = () => {
 const fetchData = async () => {
   try {
     const [locationsRes, usersRes, vehiclesRes] = await Promise.all([
-      api.get('/ubicaciones/latest'),
-      api.get('/usuarios?rol=usuario&activo=true'),
-      api.get('/vehiculos?estado=asignado')
+      api.get('/gps/latest'),
+      api.get('/users?rol=usuario&activo=true'),
+      api.get('/vehicle?estado=asignado')
     ])
     
     locations.value = locationsRes.data.data
@@ -219,7 +219,7 @@ const updateMapMarkers = () => {
         <div class="p-2">
           <h3 class="font-bold">${location.vehiculo?.matricula}</h3>
           <p>${location.vehiculo?.marca?.nombre} ${location.vehiculo?.modelo}</p>
-          <p><strong>Usuario:</strong> ${location.vehiculo?.asignacion_actual?.usuario_nombre || 'Sin asignar'}</p>
+          <p><strong>Usuario:</strong> ${location.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar'}</p>
           <p><strong>Velocidad:</strong> ${location.velocidad} km/h</p>
           <p><strong>Dirección:</strong> ${location.direccion}°</p>
           <p><strong>Actualizado:</strong> ${formatDate(location.timestamp_gps)}</p>
@@ -248,7 +248,7 @@ const updateVehicleLocation = (locationData) => {
       <div class="p-2">
         <h3 class="font-bold">${locationData.vehiculo?.matricula}</h3>
         <p>${locationData.vehiculo?.marca?.nombre} ${locationData.vehiculo?.modelo}</p>
-        <p><strong>Usuario:</strong> ${locationData.vehiculo?.asignacion_actual?.usuario_nombre || 'Sin asignar'}</p>
+        <p><strong>Usuario:</strong> ${locationData.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar'}</p>
         <p><strong>Velocidad:</strong> ${locationData.velocidad} km/h</p>
         <p><strong>Dirección:</strong> ${locationData.direccion}°</p>
         <p><strong>Actualizado:</strong> ${formatDate(locationData.timestamp_gps)}</p>

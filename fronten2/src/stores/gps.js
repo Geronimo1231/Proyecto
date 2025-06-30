@@ -85,7 +85,7 @@ const useGpsStore = defineStore("gps", () => {
     try {
       loading.value = true
       const params = new URLSearchParams(filters).toString()
-      const response = await api.get(`/gps-locations${params ? `?${params}` : ""}`)
+      const response = await api.get(`/gps${params ? `?${params}` : ""}`)
       locations.value = response.data.data
       return { success: true, data: response.data.data }
     } catch (error) {
@@ -99,7 +99,7 @@ const useGpsStore = defineStore("gps", () => {
   const fetchLatestLocations = async () => {
     try {
       loading.value = true
-      const response = await api.get("/gps-locations/latest")
+      const response = await api.get("/gps/latest")
       locations.value = response.data.data
       return { success: true, data: response.data.data }
     } catch (error) {
@@ -112,7 +112,7 @@ const useGpsStore = defineStore("gps", () => {
   const fetchVehicleHistory = async (vehicleId, timeRange = "24h") => {
     try {
       loading.value = true
-      const response = await api.get(`/gps-locations/vehicle/${vehicleId}/history?range=${timeRange}`)
+      const response = await api.get(`/gps/vehicle/${vehicleId}/history?range=${timeRange}`)
       return { success: true, data: response.data.data }
     } catch (error) {
       toast.error("Error al cargar el historial del vehículo")
@@ -124,7 +124,7 @@ const useGpsStore = defineStore("gps", () => {
 
   const addLocation = async (locationData) => {
     try {
-      const response = await api.post("/gps-locations", locationData)
+      const response = await api.post("/gps", locationData)
       updateLocation(response.data.data)
       return { success: true, data: response.data.data }
     } catch (error) {

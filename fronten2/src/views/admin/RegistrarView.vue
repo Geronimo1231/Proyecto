@@ -138,7 +138,7 @@
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >
                   <option value="">Seleccionar tipo</option>
-                  <option v-for="tipo in tiposVehiculos" :key="tipo.id" :value="tipo.id">
+                  <option v-for="tipo in tiposvehicle" :key="tipo.id" :value="tipo.id">
                     {{ tipo.nombre }}
                   </option>
                 </select>
@@ -216,7 +216,7 @@
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Seleccionar usuario</option>
-              <option v-for="usuario in usuariosDisponibles" :key="usuario.id" :value="usuario.id">
+              <option v-for="usuario in usersDisponibles" :key="usuario.id" :value="usuario.id">
                 {{ usuario.nombre }} {{ usuario.apellido }}
               </option>
             </select>
@@ -230,7 +230,7 @@
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Seleccionar vehículo</option>
-              <option v-for="vehiculo in vehiculosDisponibles" :key="vehiculo.id" :value="vehiculo.id">
+              <option v-for="vehiculo in vehicleDisponibles" :key="vehiculo.id" :value="vehiculo.id">
                 {{ vehiculo.matricula }} - {{ vehiculo.modelo }}
               </option>
             </select>
@@ -292,9 +292,9 @@ import { es } from 'date-fns/locale'
 
 const roles = ref([])
 const marcas = ref([])
-const tiposVehiculos = ref([])
-const usuariosDisponibles = ref([])
-const vehiculosDisponibles = ref([])
+const tiposvehicle = ref([])
+const usersDisponibles = ref([])
+const vehicleDisponibles = ref([])
 const recentActivity = ref([])
 
 const userLoading = ref(false)
@@ -327,20 +327,20 @@ const assignForm = ref({
 
 const fetchData = async () => {
   try {
-    const [rolesRes, marcasRes, tiposRes, usuariosRes, vehiculosRes, activityRes] = await Promise.all([
+    const [rolesRes, marcasRes, tiposRes, usersRes, vehicleRes, activityRes] = await Promise.all([
       api.get('/roles'),
       api.get('/marcas'),
-      api.get('/tipos-vehiculos'),
-      api.get('/usuarios?rol=usuario&activo=true'),
-      api.get('/vehiculos?estado=disponible'),
+      api.get('/tipos-vehicle'),
+      api.get('/users?rol=usuario&activo=true'),
+      api.get('/vehicle?estado=disponible'),
       api.get('/dashboard/activity?limit=10')
     ])
     
     roles.value = rolesRes.data.data
     marcas.value = marcasRes.data.data
-    tiposVehiculos.value = tiposRes.data.data
-    usuariosDisponibles.value = usuariosRes.data.data
-    vehiculosDisponibles.value = vehiculosRes.data.data
+    tiposvehicle.value = tiposRes.data.data
+    usersDisponibles.value = usersRes.data.data
+    vehicleDisponibles.value = vehicleRes.data.data
     recentActivity.value = activityRes.data.data
   } catch (error) {
     toast.error('Error al cargar los datos')
@@ -350,7 +350,7 @@ const fetchData = async () => {
 const registerUser = async () => {
   try {
     userLoading.value = true
-    await api.post('/usuarios', userForm.value)
+    await api.post('/users', userForm.value)
     toast.success('Usuario registrado correctamente')
     
     // Reset form
@@ -374,7 +374,7 @@ const registerUser = async () => {
 const registerVehicle = async () => {
   try {
     vehicleLoading.value = true
-    await api.post('/vehiculos', vehicleForm.value)
+    await api.post('/vehicle', vehicleForm.value)
     toast.success('Vehículo registrado correctamente')
     
     // Reset form
@@ -399,7 +399,7 @@ const registerVehicle = async () => {
 const quickAssign = async () => {
   try {
     assignLoading.value = true
-    await api.post('/asignaciones', assignForm.value)
+    await api.post('/assignmentes', assignForm.value)
     toast.success('Vehículo asignado correctamente')
     
     // Reset form

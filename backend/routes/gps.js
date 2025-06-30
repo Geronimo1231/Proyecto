@@ -8,9 +8,11 @@ import {
   bulkCreateGpsLocations,
 } from "../controllers/gpsController.js"
 import { validateGpsLocation } from "../middleware/validation.js"
+import { authenticateToken } from "../middleware/auth.js"
+
 
 const router = express.Router()
-
+router.use(authenticateToken)
 // Rutas para usuarios normales
 router.get("/user/locations", getUserVehicleLocations)
 

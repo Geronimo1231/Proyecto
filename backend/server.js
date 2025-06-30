@@ -24,9 +24,28 @@ app.use(express.urlencoded({ extended: true }))
 // Rutas
 import authRoutes from "./routes/auth.js"
 import vehicleRoutes from "./routes/vehicles.js"
+import userRoutes from "./routes/users.js"
+import dashboardRoutes from "./routes/dashboard.js"
+import gpsRoutes from "./routes/gps.js"
+import assignmentRoutes from "./routes/assignments.js"
 
 app.use("/api/auth", authRoutes)
 app.use("/api/vehicles", vehicleRoutes)
+app.use("/api/users", userRoutes)
+app.use("/api/dashboard", dashboardRoutes)
+app.use("/api/gps", gpsRoutes)
+app.use("/api/assignments", assignmentRoutes)
+
+export function emitGpsUpdate(data) {
+  // Aquí pones la lógica que emite una actualización GPS, por ejemplo vía WebSocket
+  console.log("emitGpsUpdate", data)
+}
+
+export function emitBulkGpsUpdate(dataArray) {
+  // Aquí la lógica para múltiples actualizaciones
+  console.log("emitBulkGpsUpdate", dataArray)
+}
+
 
 // Ruta de health check
 app.get("/api/health", (req, res) => {

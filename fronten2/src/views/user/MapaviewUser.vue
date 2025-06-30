@@ -183,8 +183,8 @@ const initSocket = () => {
 const fetchData = async () => {
   try {
     const [locationsRes, vehiclesRes] = await Promise.all([
-      api.get('/user/ubicaciones'),
-      api.get('/user/vehiculos')
+      api.get('/user/gps'),
+      api.get('/user/vehicle')
     ])
     
     locations.value = locationsRes.data.data

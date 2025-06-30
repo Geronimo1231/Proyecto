@@ -22,6 +22,49 @@ export const validateUser = (req, res, next) => {
   next()
 }
 
+export const validateAssignment = (req, res, next) => {
+  const schema = Joi.object({
+    userId: Joi.number().integer().required(),
+    vehicleId: Joi.number().integer().required(),
+    startDate: Joi.date().required(),
+    endDate: Joi.date().greater(Joi.ref("startDate")).optional(),
+    isActive: Joi.boolean().optional()
+  })
+
+  const { error } = schema.validate(req.body)
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Datos de asignación inválidos",
+      errors: error.details.map((detail) => detail.message),
+    })
+  }
+
+  next()
+}
+
+
+export const validateGpsLocation = (req, res, next) => {
+  const schema = Joi.object({
+    vehicleId: Joi.number().integer().required(),
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required(),
+    gpsTimestamp: Joi.date().optional(), // opcional según tu modelo
+  })
+
+  const { error } = schema.validate(req.body)
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Datos de ubicación GPS inválidos",
+      errors: error.details.map((detail) => detail.message),
+    })
+  }
+
+  next()
+}
+
+
 export const validateVehicle = (req, res, next) => {
   const schema = Joi.object({
     licensePlate: Joi.string().required(),

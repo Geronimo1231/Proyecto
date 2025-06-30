@@ -199,7 +199,7 @@
             
             <div class="mt-4">
               <router-link
-                to="/user/vehiculos"
+                to="/user/vehicle"
                 class="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700"
               >
                 Ver Mis Vehículos

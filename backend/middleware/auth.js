@@ -68,3 +68,6 @@ export const generateToken = (user) => {
     { expiresIn: "12h" },
   )
 }
+
+
+export const requireAdmin = requireRole(["admin"])
