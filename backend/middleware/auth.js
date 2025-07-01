@@ -69,5 +69,4 @@ export const generateToken = (user) => {
   )
 }
 
-
-export const requireAdmin = requireRole(["admin"])
+export const requireAdmin = requireRole(["Admin"])

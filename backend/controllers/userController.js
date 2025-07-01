@@ -108,8 +108,8 @@ export const createUser = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password, role = "User" } = req.body
 
-    // Verificar permisos
-    if (req.user.role !== "GlobalAdmin" && req.user.role !== "Admin") {
+    // Verificar permisos - solo Admin puede crear usuarios
+    if (req.user.role !== "Admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para crear usuarios",
@@ -165,7 +165,7 @@ export const updateUser = async (req, res) => {
     const { firstName, lastName, email, phone, role } = req.body
 
     // Verificar permisos
-    if (req.user.role !== "GlobalAdmin" && req.user.role !== "Admin" && req.user.id !== Number.parseInt(id)) {
+    if (req.user.role !== "Admin" && req.user.id !== Number.parseInt(id)) {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para actualizar este usuario",
@@ -193,7 +193,7 @@ export const updateUser = async (req, res) => {
 
     // Solo admins pueden cambiar roles
     const updateData = { firstName, lastName, email, phone }
-    if ((req.user.role === "GlobalAdmin" || req.user.role === "Admin") && role) {
+    if (req.user.role === "Admin" && role) {
       updateData.role = role
     }
 
@@ -223,8 +223,8 @@ export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params
 
-    // Verificar permisos
-    if (req.user.role !== "GlobalAdmin" && req.user.role !== "Admin") {
+    // Verificar permisos - solo Admin puede eliminar usuarios
+    if (req.user.role !== "Admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para eliminar usuarios",
@@ -239,13 +239,13 @@ export const deleteUser = async (req, res) => {
       })
     }
 
-    // No permitir eliminar al último GlobalAdmin
-    if (user.role === "GlobalAdmin") {
-      const adminCount = await User.count({ where: { role: "GlobalAdmin" } })
+    // No permitir eliminar al último Admin
+    if (user.role === "Admin") {
+      const adminCount = await User.count({ where: { role: "Admin" } })
       if (adminCount <= 1) {
         return res.status(400).json({
           success: false,
-          message: "No se puede eliminar al último administrador global",
+          message: "No se puede eliminar al último administrador",
         })
       }
     }

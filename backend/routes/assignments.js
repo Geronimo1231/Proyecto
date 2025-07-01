@@ -21,4 +21,3 @@ router.post("/", requireAdmin, validateAssignment, createAssignment)
 router.patch("/:id/unassign", requireAdmin, unassignVehicle)
 
 export default router
-

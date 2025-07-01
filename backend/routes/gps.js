@@ -19,7 +19,7 @@ router.get("/user/locations", getUserVehicleLocations)
 // Rutas públicas para usuarios autenticados
 router.get("/", getAllGpsLocations)
 router.get("/latest", getLatestLocations)
-router.get("/vehicle/:vehicleId/history", getVehicleLocationHistory)
+router.get("/vehicles/:vehicleId/history", getVehicleLocationHistory)
 
 // Rutas para crear ubicaciones (pueden ser usadas por dispositivos GPS)
 router.post("/", validateGpsLocation, createGpsLocation)

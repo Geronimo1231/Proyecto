@@ -314,9 +314,9 @@ const filteredvehicle = computed(() => {
 const fetchData = async () => {
   try {
     const [vehicleRes, marcasRes, tiposRes] = await Promise.all([
-      api.get('/vehicle'),
-      api.get('/marcas'),
-      api.get('/tipos-vehicle')
+      api.get('api/vehicles'),
+      api.get('api/marcas'),
+      api.get('api/tipos-vehicle')
     ])
     
     vehicle.value = vehicleRes.data.data

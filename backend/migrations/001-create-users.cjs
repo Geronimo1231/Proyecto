@@ -7,7 +7,7 @@ const users = [
         email: "admin@vehiculos.com",
         phone: "+1234567890",
         password: "Admin123!",
-        role: "GlobalAdmin",
+        role: "Admin",
         createdAt: new Date(),
         updatedAt: new Date(),
       },

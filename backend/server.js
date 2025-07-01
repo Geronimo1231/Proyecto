@@ -28,6 +28,11 @@ import userRoutes from "./routes/users.js"
 import dashboardRoutes from "./routes/dashboard.js"
 import gpsRoutes from "./routes/gps.js"
 import assignmentRoutes from "./routes/assignments.js"
+import vehicleTypeRoutes from "./routes/vehicles-types.js"
+import roleRoutes from "./routes/roles.js"
+import brandRoutes from "./routes/brands.js"
+
+
 
 app.use("/api/auth", authRoutes)
 app.use("/api/vehicles", vehicleRoutes)
@@ -35,6 +40,9 @@ app.use("/api/users", userRoutes)
 app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/gps", gpsRoutes)
 app.use("/api/assignments", assignmentRoutes)
+app.use("/api/tipos-vehicles", vehicleTypeRoutes)
+app.use("/api/roles", roleRoutes)
+app.use("/api/marcas", brandRoutes)
 
 export function emitGpsUpdate(data) {
   // Aquí pones la lógica que emite una actualización GPS, por ejemplo vía WebSocket

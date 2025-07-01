@@ -3,6 +3,9 @@ import User from "./User.js"
 import Vehicle from "./Vehicle.js"
 import Assignment from "./Assignment.js"
 import GpsLocation from "./GpsLocation.js"
+import { TipoVehiculo } from "./TipoVehiculo.js"
+import { Rol } from "./Rol.js"
+import { Marca } from "./Marca.js"
 
 // Definir relaciones
 User.hasMany(Assignment, { foreignKey: "userId", as: "assignments" })
@@ -17,4 +20,4 @@ User.hasMany(Vehicle, { foreignKey: "assignedUserId", as: "assignedVehicles" })
 Vehicle.hasMany(GpsLocation, { foreignKey: "vehicleId", as: "gpsLocations" })
 GpsLocation.belongsTo(Vehicle, { foreignKey: "vehicleId", as: "vehicle" })
 
-export { sequelize, User, Vehicle, Assignment, GpsLocation }
+export { sequelize, User, Vehicle, Assignment, GpsLocation, TipoVehiculo, Rol, Marca}
