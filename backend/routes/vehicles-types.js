@@ -8,16 +8,23 @@ router.use(authenticateToken)
 // Obtener todos los tipos de vehículos
 router.get("/", async (req, res) => {
   try {
-    const vehicleTypes = await TipoVehiculo.findAll({
-      order: [["nombre", "ASC"]],
-    })
+    const vehicleTypes = [
+      { id: 1, nombre: "Sedán" },
+      { id: 2, nombre: "SUV" },
+      { id: 3, nombre: "Hatchback" },
+      { id: 4, nombre: "Pickup" },
+      { id: 5, nombre: "Coupé" },
+      { id: 6, nombre: "Convertible" },
+      { id: 7, nombre: "Camioneta" },
+      { id: 8, nombre: "Motocicleta" },
+    ]
 
     res.json({
       success: true,
       data: vehicleTypes,
     })
   } catch (error) {
-    console.error("Error al obtener tipos de vehículos:", error)
+    console.error("Error en vehicle types:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -26,7 +33,7 @@ router.get("/", async (req, res) => {
 })
 
 // Crear nuevo tipo de vehículo (solo admins)
-router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.post("/", requireRole(["Admin"]), async (req, res) => {
   try {
     const { nombre, descripcion } = req.body
 
@@ -62,7 +69,7 @@ router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Actualizar tipo de vehículo (solo admins)
-router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.put("/:id", requireRole(["Admin"]), async (req, res) => {
   try {
     const { id } = req.params
     const { nombre, descripcion } = req.body
@@ -92,7 +99,7 @@ router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Eliminar tipo de vehículo (solo admins)
-router.delete("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.delete("/:id", requireRole(["Admin"]), async (req, res) => {
   try {
     const { id } = req.params
 

@@ -1,13 +1,22 @@
 import Joi from "joi"
 
 export const validateUser = (req, res, next) => {
+  const { firstName, lastName, email } = req.body
+
+  if (!firstName || !lastName || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "Nombre, apellido y email son requeridos",
+    })
+  }
+
   const schema = Joi.object({
     firstName: Joi.string().min(2).max(100).required(),
     lastName: Joi.string().min(2).max(100).required(),
     email: Joi.string().email().required(),
     phone: Joi.string().allow("", null).optional(),
     password: Joi.string().min(8).required(),
-    role: Joi.string().valid("GlobalAdmin", "Admin", "User").optional(),
+    role: Joi.string().valid("Admin", "User").optional(),
   })
 
   const { error } = schema.validate(req.body)
@@ -28,7 +37,7 @@ export const validateAssignment = (req, res, next) => {
     vehicleId: Joi.number().integer().required(),
     startDate: Joi.date().required(),
     endDate: Joi.date().greater(Joi.ref("startDate")).optional(),
-    isActive: Joi.boolean().optional()
+    isActive: Joi.boolean().optional(),
   })
 
   const { error } = schema.validate(req.body)
@@ -43,8 +52,16 @@ export const validateAssignment = (req, res, next) => {
   next()
 }
 
-
 export const validateGpsLocation = (req, res, next) => {
+  const { latitud, longitud, vehiculo_id } = req.body
+
+  if (!latitud || !longitud || !vehiculo_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Latitud, longitud y ID del vehículo son requeridos",
+    })
+  }
+
   const schema = Joi.object({
     vehicleId: Joi.number().integer().required(),
     latitude: Joi.number().min(-90).max(90).required(),
@@ -63,7 +80,6 @@ export const validateGpsLocation = (req, res, next) => {
 
   next()
 }
-
 
 export const validateVehicle = (req, res, next) => {
   const schema = Joi.object({

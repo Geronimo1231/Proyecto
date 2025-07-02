@@ -1,7 +1,7 @@
 import { User, Vehicle, Assignment, GpsLocation } from "../models/index.js"
 import { logger } from "../config/database.js"
 import { Op } from "sequelize"
-import sequelize from "../config/database.js" 
+import sequelize from "../config/database.js"
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -12,7 +12,7 @@ export const getDashboardStats = async (req, res) => {
       maintenanceVehicles: await Vehicle.count({ where: { status: "maintenance" } }),
       outOfServiceVehicles: await Vehicle.count({ where: { status: "out_of_service" } }),
       totalUsers: await User.count(),
-      adminUsers: await User.count({ where: { role: { [Op.in]: ["GlobalAdmin", "Admin"] } } }),
+      adminUsers: await User.count({ where: { role: { [Op.in]: ["Admin"] } } }),
       regularUsers: await User.count({ where: { role: "User" } }),
       activeAssignments: await Assignment.count({ where: { isActive: true } }),
     }
@@ -75,7 +75,7 @@ export const getRecentActivity = async (req, res) => {
     const activities = recentAssignments.map((assignment) => ({
       id: assignment.id,
       type: assignment.isActive ? "assignment" : "unassignment",
-      Description: assignment.isActive
+      description: assignment.isActive
         ? `Vehículo ${assignment.vehicle.licensePlate} asignado a ${assignment.user.firstName} ${assignment.user.lastName}`
         : `Vehículo ${assignment.vehicle.licensePlate} desasignado de ${assignment.user.firstName} ${assignment.user.lastName}`,
       createdAt: assignment.createdAt,
@@ -164,7 +164,7 @@ export const getUserActivity = async (req, res) => {
     const activities = userAssignments.map((assignment) => ({
       id: assignment.id,
       type: assignment.isActive ? "vehicle_assigned" : "vehicle_unassigned",
-      Description: assignment.isActive
+      description: assignment.isActive
         ? `Te asignaron el vehículo ${assignment.vehicle.licensePlate}`
         : `Se desasignó el vehículo ${assignment.vehicle.licensePlate}`,
       createdAt: assignment.createdAt,

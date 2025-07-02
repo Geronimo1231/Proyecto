@@ -1,72 +1,55 @@
-import jwt from "jsonwebtoken"
-import { User } from "../models/index.js"
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "tu_clave_secreta_muy_segura_12345"
+const SECRET_KEY = "2123312231";
 
-export const authenticateToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers["authorization"]
-    const token = authHeader && authHeader.split(" ")[1]
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Token de acceso requerido",
-      })
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET)
-    const user = await User.findByPk(decoded.id, {
-      attributes: { exclude: ["password"] },
-    })
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Usuario no válido",
-      })
-    }
-
-    req.user = user
-    next()
-  } catch (error) {
-    return res.status(403).json({
-      success: false,
-      message: "Token inválido",
-    })
-  }
-}
-
-export const requireRole = (roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Usuario no autenticado",
-      })
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para realizar esta acción",
-      })
-    }
-
-    next()
-  }
-}
-
-export const generateToken = (user) => {
+// Genera token JWT para un usuario
+export function generateToken(user) {
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
       role: user.role,
     },
-    JWT_SECRET,
-    { expiresIn: "12h" },
-  )
+    SECRET_KEY,
+    { expiresIn: "1h" }
+  );
 }
 
-export const requireAdmin = requireRole(["Admin"])
+// Middleware para validar el token JWT y agregar user al req
+export const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token de acceso requerido",
+      });
+    }
+
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded;
+
+    next();
+  } catch (error) {
+    console.error("Error en authenticateToken:", error);
+    return res.status(403).json({
+      success: false,
+      message: "Token inválido o expirado",
+    });
+  }
+};
+
+// Middleware para requerir uno o más roles (ej: Admin, GlobalAdmin)
+export const requireRole = (roles = []) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Acceso denegado. No tienes permisos suficientes.",
+      });
+    }
+    next();
+  };
+};

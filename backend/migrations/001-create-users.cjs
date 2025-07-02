@@ -69,7 +69,7 @@ module.exports = {
         type: Sequelize.STRING,
       },
       role: {
-        type: Sequelize.ENUM("GlobalAdmin", "Admin", "User"),
+        type: Sequelize.ENUM("Admin", "User"),
       },
       photo: {
         type: Sequelize.STRING,

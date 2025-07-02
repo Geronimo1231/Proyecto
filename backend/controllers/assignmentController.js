@@ -55,7 +55,7 @@ export const createAssignment = async (req, res) => {
     const { userId, vehicleId, notes } = req.body
 
     // Verificar permisos
-    if (req.user.role !== "GlobalAdmin" && req.user.role !== "Admin") {
+    if (req.user.role !== "Admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para crear asignaciones",
@@ -150,7 +150,7 @@ export const unassignVehicle = async (req, res) => {
     const { id } = req.params
 
     // Verificar permisos
-    if (req.user.role !== "GlobalAdmin" && req.user.role !== "Admin") {
+    if (req.user.role !== "Admin") {
       return res.status(403).json({
         success: false,
         message: "No tienes permisos para desasignar vehículos",

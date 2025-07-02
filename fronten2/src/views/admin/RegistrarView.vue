@@ -289,7 +289,6 @@ import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-
 const roles = ref([])
 const marcas = ref([])
 const tiposvehicle = ref([])
@@ -327,22 +326,23 @@ const assignForm = ref({
 
 const fetchData = async () => {
   try {
-    const [rolesRes, marcasRes, tiposRes, usersRes, vehicleRes, activityRes] = await Promise.all([
+    const [rolesRes, marcasRes, tiposRes, usersRes, vehiclesRes, activityRes] = await Promise.all([
       api.get('/roles'),
-      api.get('/marcas'),
-      api.get('/tipos-vehicle'),
-      api.get('/users?rol=usuario&activo=true'),
-      api.get('/vehicle?estado=disponible'),
+      api.get('/brands'),
+      api.get('/vehicles-types'),
+      api.get('/users?role=User'),
+      api.get('/vehicles?status=available'),
       api.get('/dashboard/activity?limit=10')
     ])
     
-    roles.value = rolesRes.data.data
-    marcas.value = marcasRes.data.data
-    tiposvehicle.value = tiposRes.data.data
-    usersDisponibles.value = usersRes.data.data
-    vehicleDisponibles.value = vehicleRes.data.data
-    recentActivity.value = activityRes.data.data
+    roles.value = rolesRes.data.data || []
+    marcas.value = marcasRes.data.data || []
+    tiposvehicle.value = tiposRes.data.data || [] // Corrected variable name
+    usersDisponibles.value = usersRes.data.data || []
+    vehicleDisponibles.value = vehiclesRes.data.vehicles || vehiclesRes.data.data || []
+    recentActivity.value = activityRes.data.data || []
   } catch (error) {
+    console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
   }
 }
@@ -374,7 +374,7 @@ const registerUser = async () => {
 const registerVehicle = async () => {
   try {
     vehicleLoading.value = true
-    await api.post('/vehicle', vehicleForm.value)
+    await api.post('/vehicles', vehicleForm.value)
     toast.success('Vehículo registrado correctamente')
     
     // Reset form
@@ -399,7 +399,7 @@ const registerVehicle = async () => {
 const quickAssign = async () => {
   try {
     assignLoading.value = true
-    await api.post('/assignmentes', assignForm.value)
+    await api.post('/assignments', assignForm.value)
     toast.success('Vehículo asignado correctamente')
     
     // Reset form

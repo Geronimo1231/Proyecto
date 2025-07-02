@@ -49,10 +49,10 @@
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">Todos los estados</option>
-            <option value="disponible">Disponible</option>
-            <option value="asignado">Asignado</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="fuera_servicio">Fuera de Servicio</option>
+            <option value="available">Disponible</option>
+            <option value="assigned">Asignado</option>
+            <option value="maintenance">Mantenimiento</option>
+            <option value="out_of_service">Fuera de Servicio</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -69,29 +69,29 @@
     <!-- Vehicles Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
-        v-for="vehiculo in filteredvehicle"
+        v-for="vehiculo in filteredVehicles"
         :key="vehiculo.id"
         class="bg-white shadow rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
       >
         <div class="aspect-w-16 aspect-h-9">
           <img
             :src="vehiculo.imagenes?.[0] || '/placeholder.svg?height=200&width=300'"
-            :alt="vehiculo.modelo"
+            :alt="vehiculo.model"
             class="w-full h-48 object-cover"
           />
         </div>
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-lg font-semibold text-gray-900">{{ vehiculo.matricula }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ vehiculo.licensePlate }}</h3>
             <span
               class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-              :class="getStatusClass(vehiculo.estado)"
+              :class="getStatusClass(vehiculo.status)"
             >
-              {{ getStatusText(vehiculo.estado) }}
+              {{ getStatusText(vehiculo.status) }}
             </span>
           </div>
-          <p class="text-sm text-gray-600 mb-1">{{ vehiculo.marca }} {{ vehiculo.modelo }}</p>
-          <p class="text-sm text-gray-600 mb-2">Año: {{ vehiculo.año }}</p>
+          <p class="text-sm text-gray-600 mb-1">{{ vehiculo.brand }} {{ vehiculo.model }}</p>
+          <p class="text-sm text-gray-600 mb-2">Año: {{ vehiculo.year }}</p>
           
           <div v-if="vehiculo.assignment_actual" class="mb-3 p-2 bg-blue-50 rounded">
             <p class="text-xs text-blue-700">
@@ -139,7 +139,7 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Matrícula *</label>
                   <input
-                    v-model="vehicleForm.matricula"
+                    v-model="vehicleForm.licensePlate"
                     type="text"
                     required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -150,12 +150,12 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Marca *</label>
                     <select
-                      v-model="vehicleForm.marca_id"
+                      v-model="vehicleForm.brand"
                       required
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="">Seleccionar marca</option>
-                      <option v-for="marca in marcas" :key="marca.id" :value="marca.id">
+                      <option v-for="marca in marcas" :key="marca.id" :value="marca.nombre">
                         {{ marca.nombre }}
                       </option>
                     </select>
@@ -164,12 +164,12 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
                     <select
-                      v-model="vehicleForm.tipo_vehiculo_id"
+                      v-model="vehicleForm.type"
                       required
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="">Seleccionar tipo</option>
-                      <option v-for="tipo in tiposvehicle" :key="tipo.id" :value="tipo.id">
+                      <option v-for="tipo in tiposVehicles" :key="tipo.id" :value="tipo.nombre">
                         {{ tipo.nombre }}
                       </option>
                     </select>
@@ -180,7 +180,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Modelo *</label>
                     <input
-                      v-model="vehicleForm.modelo"
+                      v-model="vehicleForm.model"
                       type="text"
                       required
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -190,7 +190,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Año *</label>
                     <input
-                      v-model="vehicleForm.año"
+                      v-model="vehicleForm.year"
                       type="number"
                       min="1900"
                       max="2025"
@@ -213,29 +213,9 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kilometraje</label>
                     <input
-                      v-model="vehicleForm.kilometraje"
+                      v-model="vehicleForm.mileage"
                       type="number"
                       min="0"
-                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Número de Motor</label>
-                    <input
-                      v-model="vehicleForm.numero_motor"
-                      type="text"
-                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Número de Chasis</label>
-                    <input
-                      v-model="vehicleForm.numero_chasis"
-                      type="text"
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     />
                   </div>
@@ -272,10 +252,9 @@ import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
-
-const vehicle = ref([])
+const vehicles = ref([])
 const marcas = ref([])
-const tiposvehicle = ref([])
+const tiposVehicles = ref([])
 const loading = ref(false)
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -287,25 +266,23 @@ const filters = ref({
 })
 
 const vehicleForm = ref({
-  matricula: '',
-  marca_id: '',
-  modelo: '',
-  año: new Date().getFullYear(),
+  licensePlate: '',
+  brand: '',
+  model: '',
+  year: new Date().getFullYear(),
   color: '',
-  tipo_vehiculo_id: '',
-  numero_motor: '',
-  numero_chasis: '',
-  kilometraje: 0
+  type: '',
+  mileage: 0
 })
 
-const filteredvehicle = computed(() => {
-  return vehicle.value.filter(vehiculo => {
+const filteredVehicles = computed(() => {
+  return vehicles.value.filter(vehiculo => {
     const matchesSearch = !filters.value.search || 
-      vehiculo.matricula.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      vehiculo.modelo.toLowerCase().includes(filters.value.search.toLowerCase())
+      vehiculo.licensePlate?.toLowerCase().includes(filters.value.search.toLowerCase()) ||
+      vehiculo.model?.toLowerCase().includes(filters.value.search.toLowerCase())
     
-    const matchesMarca = !filters.value.marca || vehiculo.marca_id == filters.value.marca
-    const matchesEstado = !filters.value.estado || vehiculo.estado === filters.value.estado
+    const matchesMarca = !filters.value.marca || vehiculo.brand === filters.value.marca
+    const matchesEstado = !filters.value.estado || vehiculo.status === filters.value.estado
     
     return matchesSearch && matchesMarca && matchesEstado
   })
@@ -313,16 +290,17 @@ const filteredvehicle = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [vehicleRes, marcasRes, tiposRes] = await Promise.all([
-      api.get('api/vehicles'),
-      api.get('api/marcas'),
-      api.get('api/tipos-vehicle')
+    const [vehiclesRes, marcasRes, tiposRes] = await Promise.all([
+      api.get('/vehicles'),
+      api.get('/brands'),
+      api.get('/vehicles-types')
     ])
     
-    vehicle.value = vehicleRes.data.data
-    marcas.value = marcasRes.data.data
-    tiposvehicle.value = tiposRes.data.data
+    vehicles.value = vehiclesRes.data.vehicles || vehiclesRes.data.data || []
+    marcas.value = marcasRes.data.data || []
+    tiposVehicles.value = tiposRes.data.data || []
   } catch (error) {
+    console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
   }
 }
@@ -332,10 +310,10 @@ const saveVehicle = async () => {
     loading.value = true
     
     if (showEditModal.value) {
-      await api.put(`/vehicle/${vehicleForm.value.id}`, vehicleForm.value)
+      await api.put(`/vehicles/${vehicleForm.value.id}`, vehicleForm.value)
       toast.success('Vehículo actualizado correctamente')
     } else {
-      await api.post('/vehicle', vehicleForm.value)
+      await api.post('/vehicles', vehicleForm.value)
       toast.success('Vehículo agregado correctamente')
     }
     
@@ -354,9 +332,9 @@ const editVehicle = (vehiculo) => {
 }
 
 const deleteVehicle = async (vehiculo) => {
-  if (confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.matricula}?`)) {
+  if (confirm(`¿Estás seguro de eliminar el vehículo ${vehiculo.licensePlate}?`)) {
     try {
-      await api.delete(`/vehicle/${vehiculo.id}`)
+      await api.delete(`/vehicles/${vehiculo.id}`)
       toast.success('Vehículo eliminado correctamente')
       await fetchData()
     } catch (error) {
@@ -366,7 +344,6 @@ const deleteVehicle = async (vehiculo) => {
 }
 
 const viewVehicle = (vehiculo) => {
-  // Implementar vista de detalles
   console.log('Ver detalles:', vehiculo)
 }
 
@@ -374,15 +351,13 @@ const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
   vehicleForm.value = {
-    matricula: '',
-    marca_id: '',
-    modelo: '',
-    año: new Date().getFullYear(),
+    licensePlate: '',
+    brand: '',
+    model: '',
+    year: new Date().getFullYear(),
     color: '',
-    tipo_vehiculo_id: '',
-    numero_motor: '',
-    numero_chasis: '',
-    kilometraje: 0
+    type: '',
+    mileage: 0
   }
 }
 
@@ -396,20 +371,20 @@ const resetFilters = () => {
 
 const getStatusClass = (estado) => {
   switch (estado) {
-    case 'disponible': return 'bg-green-100 text-green-800'
-    case 'asignado': return 'bg-blue-100 text-blue-800'
-    case 'mantenimiento': return 'bg-yellow-100 text-yellow-800'
-    case 'fuera_servicio': return 'bg-red-100 text-red-800'
+    case 'available': return 'bg-green-100 text-green-800'
+    case 'assigned': return 'bg-blue-100 text-blue-800'
+    case 'maintenance': return 'bg-yellow-100 text-yellow-800'
+    case 'out_of_service': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
 
 const getStatusText = (estado) => {
   switch (estado) {
-    case 'disponible': return 'Disponible'
-    case 'asignado': return 'Asignado'
-    case 'mantenimiento': return 'Mantenimiento'
-    case 'fuera_servicio': return 'Fuera de Servicio'
+    case 'available': return 'Disponible'
+    case 'assigned': return 'Asignado'
+    case 'maintenance': return 'Mantenimiento'
+    case 'out_of_service': return 'Fuera de Servicio'
     default: return estado
   }
 }

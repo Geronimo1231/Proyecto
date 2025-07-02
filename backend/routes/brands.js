@@ -8,16 +8,23 @@ router.use(authenticateToken)
 // Obtener todas las marcas
 router.get("/", async (req, res) => {
   try {
-    const brands = await Marca.findAll({
-      order: [["nombre", "ASC"]],
-    })
+    const brands = [
+      { id: 1, nombre: "Toyota" },
+      { id: 2, nombre: "Honda" },
+      { id: 3, nombre: "Ford" },
+      { id: 4, nombre: "Chevrolet" },
+      { id: 5, nombre: "Nissan" },
+      { id: 6, nombre: "Volkswagen" },
+      { id: 7, nombre: "Hyundai" },
+      { id: 8, nombre: "Kia" },
+    ]
 
     res.json({
       success: true,
       data: brands,
     })
   } catch (error) {
-    console.error("Error al obtener marcas:", error)
+    console.error("Error en brands:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -26,7 +33,7 @@ router.get("/", async (req, res) => {
 })
 
 // Crear nueva marca (solo admins)
-router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.post("/", requireRole(["Admin"]), async (req, res) => {
   try {
     const { nombre } = req.body
 
@@ -62,7 +69,7 @@ router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Actualizar marca (solo admins)
-router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.put("/:id", requireRole(["Admin"]), async (req, res) => {
   try {
     const { id } = req.params
     const { nombre } = req.body
@@ -92,7 +99,7 @@ router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Eliminar marca (solo admins)
-router.delete("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.delete("/:id", requireRole(["Admin"]), async (req, res) => {
   try {
     const { id } = req.params
 

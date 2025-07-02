@@ -37,8 +37,8 @@
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >
             <option value="">Todos los roles</option>
-            <option value="admin">Administrador</option>
-            <option value="usuario">Usuario</option>
+            <option value="Admin">Administrador</option>
+            <option value="User">Usuario</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -78,33 +78,33 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="usuario in filteredusers" :key="usuario.id">
+          <tr v-for="usuario in filteredUsers" :key="usuario.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
                     :src="usuario.foto_perfil || '/placeholder.svg?height=40&width=40'"
-                    :alt="usuario.nombre"
+                    :alt="usuario.firstName"
                   />
                 </div>
                 <div class="ml-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{ usuario.nombre }} {{ usuario.apellido }}
+                    {{ usuario.firstName }} {{ usuario.lastName }}
                   </div>
                   <div class="text-sm text-gray-500">{{ usuario.email }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm text-gray-900">{{ usuario.telefono || 'No especificado' }}</div>
+              <div class="text-sm text-gray-900">{{ usuario.phone || 'No especificado' }}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="usuario.rol === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'"
+                :class="usuario.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'"
               >
-                {{ usuario.rol === 'admin' ? 'Administrador' : 'Usuario' }}
+                {{ usuario.role === 'Admin' ? 'Administrador' : 'Usuario' }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -112,10 +112,9 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"
               >
-                {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                Activo
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -127,9 +126,9 @@
               </button>
               <button
                 @click="toggleUserStatus(usuario)"
-                :class="usuario.activo ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
+                class="text-red-600 hover:text-red-900"
               >
-                {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+                Desactivar
               </button>
             </td>
           </tr>
@@ -154,7 +153,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                     <input
-                      v-model="userForm.nombre"
+                      v-model="userForm.firstName"
                       type="text"
                       required
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -164,7 +163,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
                     <input
-                      v-model="userForm.apellido"
+                      v-model="userForm.lastName"
                       type="text"
                       required
                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -185,7 +184,7 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                   <input
-                    v-model="userForm.telefono"
+                    v-model="userForm.phone"
                     type="tel"
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
@@ -194,12 +193,12 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
                   <select
-                    v-model="userForm.rol_id"
+                    v-model="userForm.role"
                     required
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   >
                     <option value="">Seleccionar rol</option>
-                    <option v-for="rol in roles" :key="rol.id" :value="rol.id">
+                    <option v-for="rol in roles" :key="rol.id" :value="rol.nombre === 'admin' ? 'Admin' : 'User'">
                       {{ rol.nombre === 'admin' ? 'Administrador' : 'Usuario' }}
                     </option>
                   </select>
@@ -262,22 +261,22 @@ const filters = ref({
 })
 
 const userForm = ref({
-  nombre: '',
-  apellido: '',
+  firstName: '',
+  lastName: '',
   email: '',
-  telefono: '',
+  phone: '',
   password: '',
-  rol_id: ''
+  role: ''
 })
 
-const filteredusers = computed(() => {
+const filteredUsers = computed(() => {
   return users.value.filter(usuario => {
     const matchesSearch = !filters.value.search || 
-      usuario.nombre.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      usuario.apellido.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      usuario.email.toLowerCase().includes(filters.value.search.toLowerCase())
+      usuario.firstName?.toLowerCase().includes(filters.value.search.toLowerCase()) ||
+      usuario.lastName?.toLowerCase().includes(filters.value.search.toLowerCase()) ||
+      usuario.email?.toLowerCase().includes(filters.value.search.toLowerCase())
     
-    const matchesRol = !filters.value.rol || usuario.rol === filters.value.rol
+    const matchesRol = !filters.value.rol || usuario.role === filters.value.rol
     
     return matchesSearch && matchesRol
   })
@@ -290,9 +289,10 @@ const fetchData = async () => {
       api.get('/roles')
     ])
     
-    users.value = usersRes.data.data
-    roles.value = rolesRes.data.data
+    users.value = usersRes.data.data || []
+    roles.value = rolesRes.data.data || []
   } catch (error) {
+    console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
   }
 }
@@ -326,7 +326,7 @@ const editUser = (usuario) => {
 const toggleUserStatus = async (usuario) => {
   try {
     await api.patch(`/users/${usuario.id}/toggle-status`)
-    toast.success(`Usuario ${usuario.activo ? 'desactivado' : 'activado'} correctamente`)
+    toast.success('Estado del usuario cambiado correctamente')
     await fetchData()
   } catch (error) {
     toast.error('Error al cambiar el estado del usuario')
@@ -337,12 +337,12 @@ const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
   userForm.value = {
-    nombre: '',
-    apellido: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    telefono: '',
+    phone: '',
     password: '',
-    rol_id: ''
+    role: ''
   }
 }
 

@@ -183,12 +183,12 @@ const initSocket = () => {
 const fetchData = async () => {
   try {
     const [locationsRes, vehiclesRes] = await Promise.all([
-      api.get('/user/gps'),
-      api.get('/user/vehicle')
+      api.get('/gps/user/locations'),
+      api.get('/users/vehicles')
     ])
     
-    locations.value = locationsRes.data.data
-    vehicles.value = vehiclesRes.data.data
+    locations.value = locationsRes.data.data || []
+    vehicles.value = vehiclesRes.data.data || []
     
     // Si hay un vehículo específico en la URL, seleccionarlo
     if (route.query.vehiculo) {
@@ -197,6 +197,7 @@ const fetchData = async () => {
     
     updateMapMarkers()
   } catch (error) {
+    console.error('Error al cargar las ubicaciones:', error)
     toast.error('Error al cargar las ubicaciones')
   }
 }

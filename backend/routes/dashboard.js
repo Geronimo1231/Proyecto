@@ -1,24 +1,70 @@
 import express from "express"
-import {
-  getDashboardStats,
-  getRecentActivity,
-  getUserDashboardStats,
-  getUserActivity,
-  getSystemHealth,
-} from "../controllers/dashboardController.js"
-import { requireAdmin, authenticateToken } from "../middleware/auth.js"
+import { authenticateToken } from "../middleware/auth.js"
 
 const router = express.Router()
-
 router.use(authenticateToken)
 
-// Rutas para usuarios normales
-router.get("/user/stats", getUserDashboardStats)
-router.get("/user/activity", getUserActivity)
+// Obtener estadísticas del dashboard
+router.get("/stats", async (req, res) => {
+  try {
+    const stats = {
+      totalUsers: 25,
+      totalVehicles: 15,
+      activeAssignments: 12,
+      totalGpsPoints: 1500,
+      recentActivity: [],
+    }
 
-// Rutas para administradores
-router.get("/stats", requireAdmin, getDashboardStats)
-router.get("/activity", requireAdmin, getRecentActivity)
-router.get("/health", requireAdmin, getSystemHealth)
+    res.json({
+      success: true,
+      data: stats,
+    })
+  } catch (error) {
+    console.error("Error en dashboard stats:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+})
+
+// Obtener actividad reciente
+router.get("/activity", async (req, res) => {
+  try {
+    const { limit = 10 } = req.query
+
+    const activities = [
+      {
+        id: 1,
+        type: "user",
+        description: "Nuevo usuario registrado: Juan Pérez",
+        created_at: new Date(),
+      },
+      {
+        id: 2,
+        type: "vehicle",
+        description: "Vehículo ABC-123 agregado al sistema",
+        created_at: new Date(),
+      },
+      {
+        id: 3,
+        type: "assign",
+        description: "Vehículo ABC-123 asignado a Juan Pérez",
+        created_at: new Date(),
+      },
+    ]
+
+    res.json({
+      success: true,
+      data: activities.slice(0, Number.parseInt(limit)),
+    })
+  } catch (error) {
+    console.error("Error en dashboard activity:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+})
 
 export default router

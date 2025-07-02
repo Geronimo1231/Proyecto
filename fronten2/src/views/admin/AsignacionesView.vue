@@ -87,7 +87,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="assignment in filteredassignmentes" :key="assignment.id">
+          <tr v-for="assignment in filteredAssignments" :key="assignment.id">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
@@ -165,7 +165,7 @@
                   >
                     <option value="">Seleccionar usuario</option>
                     <option v-for="usuario in usersDisponibles" :key="usuario.id" :value="usuario.id">
-                      {{ usuario.nombre }} {{ usuario.apellido }} ({{ usuario.email }})
+                      {{ usuario.firstName }} {{ usuario.lastName }} ({{ usuario.email }})
                     </option>
                   </select>
                 </div>
@@ -179,7 +179,7 @@
                   >
                     <option value="">Seleccionar vehículo</option>
                     <option v-for="vehiculo in vehicleDisponibles" :key="vehiculo.id" :value="vehiculo.id">
-                      {{ vehiculo.matricula }} - {{ vehiculo.marca?.nombre }} {{ vehiculo.modelo }}
+                      {{ vehiculo.licensePlate }} - {{ vehiculo.brand }} {{ vehiculo.model }}
                     </option>
                   </select>
                 </div>
@@ -227,8 +227,7 @@ import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-
-const assignmentes = ref([])
+const assignments = ref([])
 const usersDisponibles = ref([])
 const vehicleDisponibles = ref([])
 const loading = ref(false)
@@ -246,8 +245,8 @@ const assignForm = ref({
   observaciones: ''
 })
 
-const filteredassignmentes = computed(() => {
-  return assignmentes.value.filter(assignment => {
+const filteredAssignments = computed(() => {
+  return assignments.value.filter(assignment => {
     const matchesUsuario = !filters.value.usuario || 
       `${assignment.usuario?.nombre} ${assignment.usuario?.apellido}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
     
@@ -264,16 +263,17 @@ const filteredassignmentes = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [assignmentesRes, usersRes, vehicleRes] = await Promise.all([
-      api.get('/assigments'),
-      api.get('/users?rol=usuario&activo=true'),
-      api.get('/vehicle?estado=disponible')
+    const [assignmentsRes, usersRes, vehiclesRes] = await Promise.all([
+      api.get('/assignments'),
+      api.get('/users?role=User'),
+      api.get('/vehicles?status=available')
     ])
     
-    assignmentes.value = assignmentesRes.data.data
-    usersDisponibles.value = usersRes.data.data
-    vehicleDisponibles.value = vehicleRes.data.data
+    assignments.value = assignmentsRes.data.data || []
+    usersDisponibles.value = usersRes.data.data || []
+    vehicleDisponibles.value = vehiclesRes.data.vehicles || vehiclesRes.data.data || []
   } catch (error) {
+    console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
   }
 }
@@ -281,7 +281,7 @@ const fetchData = async () => {
 const assignVehicle = async () => {
   try {
     loading.value = true
-    await api.post('/assignmentes', assignForm.value)
+    await api.post('/assignments', assignForm.value)
     toast.success('Vehículo asignado correctamente')
     await fetchData()
     closeAssignModal()
@@ -295,7 +295,7 @@ const assignVehicle = async () => {
 const unassignVehicle = async (assignment) => {
   if (confirm(`¿Estás seguro de desasignar el vehículo ${assignment.vehiculo?.matricula}?`)) {
     try {
-      await api.patch(`/assignmentes/${assignment.id}/unassign`)
+      await api.patch(`/assignments/${assignment.id}/unassign`)
       toast.success('Vehículo desasignado correctamente')
       await fetchData()
     } catch (error) {
@@ -305,7 +305,6 @@ const unassignVehicle = async (assignment) => {
 }
 
 const editAssignment = (assignment) => {
-  // Implementar edición de asignación
   console.log('Editar asignación:', assignment)
 }
 
@@ -334,4 +333,3 @@ onMounted(() => {
   fetchData()
 })
 </script>
-

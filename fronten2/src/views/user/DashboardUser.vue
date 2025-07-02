@@ -244,16 +244,17 @@ const selectedVehicle = ref(null)
 
 const fetchUserData = async () => {
   try {
-    const [statsRes, vehicleRes, activityRes] = await Promise.all([
-      api.get('/user/stats'),
-      api.get('/user/vehicle'),
-      api.get('/user/activity')
+    const [statsRes, vehiclesRes, activityRes] = await Promise.all([
+      api.get('/users/stats'),
+      api.get('/users/vehicles'),
+      api.get('/users/activity')
     ])
     
-    userStats.value = statsRes.data.data
-    vehicle.value = vehicleRes.data.data
-    recentActivity.value = activityRes.data.data
+    userStats.value = statsRes.data.data || {}
+    vehicle.value = vehiclesRes.data.data || []
+    recentActivity.value = activityRes.data.data || []
   } catch (error) {
+    console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
   }
 }

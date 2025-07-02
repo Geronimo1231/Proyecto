@@ -8,16 +8,17 @@ router.use(authenticateToken)
 // Obtener todos los roles
 router.get("/", async (req, res) => {
   try {
-    const roles = await Rol.findAll({
-      order: [["name", "ASC"]],
-    })
+    const roles = [
+      { id: 1, nombre: "admin" },
+      { id: 2, nombre: "usuario" },
+    ]
 
     res.json({
       success: true,
       data: roles,
     })
   } catch (error) {
-    console.error("Error al obtener roles:", error)
+    console.error("Error en roles:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
