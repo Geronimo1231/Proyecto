@@ -94,8 +94,7 @@ module.exports = {
       },
     })
 
-    // Insertar usuarios por defecto
-
+ 
     // Generar contraseña encriptada
     const usersWithPass = []
 
