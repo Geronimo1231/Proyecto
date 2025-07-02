@@ -10,7 +10,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      vehiculo_id: {
+      vehicle_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -28,11 +28,12 @@ module.exports = {
         type: Sequelize.DECIMAL(11, 8),
         allowNull: false,
       },
-      velocidad: {
+      speed: {
         type: Sequelize.DECIMAL(5, 2),
         defaultValue: 0,
       },
-      direccion: {
+      
+      address: {
         type: Sequelize.DECIMAL(5, 2),
         defaultValue: 0,
       },
@@ -45,15 +46,20 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
       },
+      deletedAt: {
+        allowNull: true,
+        type: Sequelize.DATE,
+        defaultValue: null,
+      },
     })
 
     // Agregar columna PostGIS
     await queryInterface.sequelize.query("ALTER TABLE ubicaciones_gps ADD COLUMN ubicacion GEOMETRY(POINT, 4326);")
 
     // Crear índices
-    await queryInterface.addIndex("ubicaciones_gps", ["vehiculo_id"])
-    await queryInterface.addIndex("ubicaciones_gps", ["timestamp_gps"])
-    await queryInterface.addIndex("ubicaciones_gps", ["vehiculo_id", "timestamp_gps"])
+    await queryInterface.addIndex("gps_locations", ["vehicle_id"])
+    await queryInterface.addIndex("gps_locations", ["timestamp_gps"])
+    await queryInterface.addIndex("gps_locations", ["vehicle_id", "timestamp_gps"])
 
     // Crear índice espacial
     await queryInterface.sequelize.query(
@@ -81,6 +87,6 @@ module.exports = {
   down: async (queryInterface, Sequelize) => {
     await queryInterface.sequelize.query("DROP TRIGGER IF EXISTS update_ubicacion_gps_point ON ubicaciones_gps;")
     await queryInterface.sequelize.query("DROP FUNCTION IF EXISTS update_ubicacion_point();")
-    await queryInterface.dropTable("ubicaciones_gps")
+    await queryInterface.dropTable("gps_locations")
   },
 }

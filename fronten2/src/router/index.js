@@ -108,7 +108,7 @@ const routes = [
     component: UserLayout,
     meta: { requiresAuth: true, requiresRole: "usuario" },
     children: [
-      { path: "", redirect: "/user/dashboard" },
+      { path: "", redirect: "/user/dashboarduser" },
       { path: "dashboarduser", name: "UserDashboard", component: UserDashboard },
       { path: "usermapa", name: "UserMapa", component: UserMapa },
       { path: "userperfil", name: "UserPerfil", component: UserPerfil },
