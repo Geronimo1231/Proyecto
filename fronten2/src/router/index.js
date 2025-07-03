@@ -91,7 +91,7 @@ const routes = [
   {
     path: "/admin",
     component: AdminLayout,
-    meta: { requiresAuth: true, requiresRole: "admin" },
+    meta: { requiresAuth: true, requiresRole: "Admin" },
     children: [
       { path: "", redirect: "/admin/dashboard" },
       { path: "home", name: "AdminLayout", component: AdminLayout },
@@ -106,7 +106,7 @@ const routes = [
   {
     path: "/user",
     component: UserLayout,
-    meta: { requiresAuth: true, requiresRole: "usuario" },
+    meta: { requiresAuth: true, requiresRole: "User" },
     children: [
       { path: "", redirect: "/user/dashboarduser" },
       { path: "dashboarduser", name: "UserDashboard", component: UserDashboard },
@@ -139,7 +139,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (to.meta.requiresRole && authStore.user?.role !== to.meta.requiresrolee) {
-      if (authStore.user?.role === "admin") {
+      if (authStore.user?.role === "Admin") {
         if (to.name !== "AdminDashboard") {
           return next({ name: "AdminDashboard" });
         }
