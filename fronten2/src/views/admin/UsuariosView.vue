@@ -198,8 +198,8 @@
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   >
                     <option value="">Seleccionar rol</option>
-                    <option v-for="rol in roles" :key="rol.id" :value="rol.nombre === 'admin' ? 'Admin' : 'User'">
-                      {{ rol.nombre === 'admin' ? 'Administrador' : 'Usuario' }}
+                    <option v-for="rol in roles" :key="rol.id" :value="rol.nombre === 'Admin' ? 'Admin' : 'User'">
+                      {{ rol.nombre === 'Admin' ? 'Administrador' : 'Usuario' }}
                     </option>
                   </select>
                 </div>

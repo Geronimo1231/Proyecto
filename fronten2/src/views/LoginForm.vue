@@ -99,7 +99,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-//import { TruckIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -116,7 +116,7 @@ const handleLogin = async () => {
   
   if (result.success) {
     // Redirigir según el rol del usuario
-    if (result.user.role === 'admin') {
+    if (result.user.role === 'Admin') {
       router.push({name: 'AdminDashboard'})
       //router.push('/admin')
     } else {

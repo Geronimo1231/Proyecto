@@ -153,7 +153,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.name === "Login" && authStore.isAuthenticated) {
-    if (authStore.user?.role === "admin") {
+    if (authStore.user?.role === "Admin") {
       if (to.name !== "AdminDashboard") {
         return next({ name: "AdminDashboard" });
       }

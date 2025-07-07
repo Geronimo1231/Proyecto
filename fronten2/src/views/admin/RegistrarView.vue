@@ -83,7 +83,7 @@
               >
                 <option value="">Seleccionar rol</option>
                 <option v-for="rol in roles" :key="rol.id" :value="rol.id">
-                  {{ rol.nombre === 'admin' ? 'Administrador' : 'Usuario' }}
+                  {{ rol.nombre === 'Admin' ? 'Administrador' : 'Usuario' }}
                 </option>
               </select>
             </div>
