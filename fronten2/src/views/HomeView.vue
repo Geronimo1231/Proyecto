@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <TruckIcon class="h-8 w-8 text-white" />
-            <span class="text-xl font-bold text-white">VehicleTracker</span>
+            <span class="text-xl font-bold text-white">VehiculoGPS</span>
           </div>
           <div class="flex items-center space-x-4">
             <router-link
@@ -69,9 +69,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="absolute bottom-0 w-full py-6 text-center text-blue-200">
-      <p>&copy; 2024 Sistema de Gestión Vehicular. Todos los derechos reservados.</p>
-    </footer>
+   
   </div>
 </template>
 

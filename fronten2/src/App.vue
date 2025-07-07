@@ -1,7 +1,6 @@
 <template>
   <router-view></router-view>
-  <img alt="Vue logo" src="./assets/logo.png" class="w-4 h-4">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+ <p>&copy; 2024 Sistema de Gestión Vehicular. Todos los derechos reservados.</p>
 </template>
 
 <script>
@@ -10,7 +9,7 @@ import HelloWorld from './components/HelloWorld.vue'
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    //HelloWorld
   }
 }
 </script>
@@ -21,7 +20,7 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: #002346;
   margin-top: 60px;
 }
 </style>
