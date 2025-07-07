@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
 })
 
 // Crear nuevo tipo de vehículo (solo admins)
-router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.post("/", requireRole(["Admin"]), async (req, res) => {
   try {
     const { name, description } = req.body
 
@@ -50,7 +50,7 @@ router.post("/", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Actualizar tipo de vehículo (solo admins)
-router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.put("/:id", requireRole([ "Admin"]), async (req, res) => {
   try {
     const { id } = req.params
     const { name, description } = req.body
@@ -80,7 +80,7 @@ router.put("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
 })
 
 // Eliminar tipo de vehículo (solo admins)
-router.delete("/:id", requireRole(["GlobalAdmin", "Admin"]), async (req, res) => {
+router.delete("/:id", requireRole(["Admin"]), async (req, res) => {
   try {
     const { id } = req.params
 

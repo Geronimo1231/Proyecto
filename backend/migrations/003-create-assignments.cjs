@@ -59,14 +59,6 @@ module.exports = {
     await queryInterface.addIndex("Assignments", ["userId"])
     await queryInterface.addIndex("Assignments", ["vehicleId"])
     await queryInterface.addIndex("Assignments", ["isActive"])
-    await queryInterface.addConstraint("asignaciones", {
-      fields: ["vehicle_id", "active"],
-      type: "unique",
-      name: "unique_vehicle_active",
-      where: {
-        activa: true,
-      },
-    })
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("Assignments")

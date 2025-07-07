@@ -25,23 +25,18 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
       },
-      deletedAt: {
-        allowNull: true,
-        type: Sequelize.DATE,
-        defaultValue: null,
-      },
     })
 
     // Insertar roles por defecto
     await queryInterface.bulkInsert("roles", [
       {
-        name: "admin",
+        name: "Admin",
         Description: "Administrador del sistema con acceso completo",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        name: "usuario",
+        name: "User",
         Description: "Usuario estándar con acceso limitado",
         created_at: new Date(),
         updated_at: new Date(),

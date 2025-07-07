@@ -94,7 +94,7 @@ module.exports = {
       },
     })
 
- 
+
     // Generar contraseña encriptada
     const usersWithPass = []
 
