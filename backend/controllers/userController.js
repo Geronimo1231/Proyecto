@@ -1,25 +1,27 @@
-import bcrypt from "bcrypt"
 import { User, Vehicle, Assignment, GpsLocation } from "../models/index.js"
-import { logger } from "../config/database.js"
+import pkg from "../config/config.cjs"
+const { logger } = pkg
+
 import { Op } from "sequelize"
 
 export const getAllUsers = async (req, res) => {
   try {
-    const { role, search, page = 1, limit = 10 } = req.query
+    const { page = 1, limit = 10, search = "", role = "" } = req.query
+    const offset = (page - 1) * limit
 
     const whereClause = {}
-    if (role) {
-      whereClause.role = role
-    }
+
     if (search) {
       whereClause[Op.or] = [
-        { firstName: { [Op.like]: `%${search}%` } },
-        { lastName: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
+        { firstName: { [Op.iLike]: `%${search}%` } },
+        { lastName: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
       ]
     }
 
-    const offset = (page - 1) * limit
+    if (role) {
+      whereClause.role = role
+    }
 
     const { count, rows: users } = await User.findAndCountAll({
       where: whereClause,
@@ -46,12 +48,14 @@ export const getAllUsers = async (req, res) => {
 
     res.json({
       success: true,
-      data: users,
-      pagination: {
-        total: count,
-        page: Number.parseInt(page),
-        limit: Number.parseInt(limit),
-        totalPages: Math.ceil(count / limit),
+      data: {
+        users,
+        pagination: {
+          total: count,
+          page: Number.parseInt(page),
+          limit: Number.parseInt(limit),
+          totalPages: Math.ceil(count / limit),
+        },
       },
     })
   } catch (error) {
@@ -106,49 +110,36 @@ export const getUserById = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, role = "User" } = req.body
+    const { firstName, lastName, email, password, phone, role } = req.body
 
-    // Verificar permisos - solo Admin puede crear usuarios
-    if (req.user.role !== "Admin") {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para crear usuarios",
-      })
-    }
-
-    // Verificar si el usuario ya existe
+    // Check if user already exists
     const existingUser = await User.findOne({ where: { email } })
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado",
+        message: "Ya existe un usuario con este email",
       })
     }
 
-    // Hashear contraseña
-    const saltRounds = 12
-    const hashedPassword = await bcrypt.hash(password, saltRounds)
-
-    // Crear usuario
     const user = await User.create({
       firstName,
       lastName,
       email,
+      password,
       phone,
-      password: hashedPassword,
-      role,
+      role: role || "User",
     })
 
-    const userData = await User.findByPk(user.id, {
+    const userResponse = await User.findByPk(user.id, {
       attributes: { exclude: ["password"] },
     })
 
-    logger.info(`Usuario ${user.email} creado por ${req.user.email}`)
+    logger.info(`Usuario creado: ${user.email}`)
 
     res.status(201).json({
       success: true,
-      message: "Usuario creado exitosamente",
-      data: userData,
+      message: "Usuario creado correctamente",
+      data: userResponse,
     })
   } catch (error) {
     logger.error("Error en createUser:", error)
@@ -162,15 +153,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { firstName, lastName, email, phone, role } = req.body
-
-    // Verificar permisos
-    if (req.user.role !== "Admin" && req.user.id !== Number.parseInt(id)) {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para actualizar este usuario",
-      })
-    }
+    const { firstName, lastName, phone, role } = req.body
 
     const user = await User.findByPk(id)
     if (!user) {
@@ -180,30 +163,18 @@ export const updateUser = async (req, res) => {
       })
     }
 
-    // Verificar si el email ya existe (excepto el usuario actual)
-    if (email !== user.email) {
-      const existingUser = await User.findOne({ where: { email } })
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "El email ya está en uso",
-        })
-      }
-    }
-
-    // Solo admins pueden cambiar roles
-    const updateData = { firstName, lastName, email, phone }
-    if (req.user.role === "Admin" && role) {
-      updateData.role = role
-    }
-
-    await user.update(updateData)
+    await user.update({
+      firstName,
+      lastName,
+      phone,
+      role,
+    })
 
     const updatedUser = await User.findByPk(id, {
       attributes: { exclude: ["password"] },
     })
 
-    logger.info(`Usuario ${user.email} actualizado por ${req.user.email}`)
+    logger.info(`Usuario actualizado: ${user.email}`)
 
     res.json({
       success: true,
@@ -223,14 +194,6 @@ export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params
 
-    // Verificar permisos - solo Admin puede eliminar usuarios
-    if (req.user.role !== "Admin") {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para eliminar usuarios",
-      })
-    }
-
     const user = await User.findByPk(id)
     if (!user) {
       return res.status(404).json({
@@ -239,21 +202,21 @@ export const deleteUser = async (req, res) => {
       })
     }
 
-    // No permitir eliminar al último Admin
-    if (user.role === "Admin") {
-      const adminCount = await User.count({ where: { role: "Admin" } })
-      if (adminCount <= 1) {
-        return res.status(400).json({
-          success: false,
-          message: "No se puede eliminar al último administrador",
-        })
-      }
+    // Check if user has active assignments
+    const activeAssignments = await Assignment.count({
+      where: { userId: id, isActive: true },
+    })
+
+    if (activeAssignments > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No se puede eliminar un usuario con asignaciones activas",
+      })
     }
 
-    // Soft delete
     await user.destroy()
 
-    logger.info(`Usuario ${user.email} eliminado por ${req.user.email}`)
+    logger.info(`Usuario eliminado: ${user.email}`)
 
     res.json({
       success: true,
@@ -272,34 +235,42 @@ export const getUserStats = async (req, res) => {
   try {
     const userId = req.user.id
 
-    const user = await User.findByPk(userId, {
+    // Get user assignments
+    const assignments = await Assignment.findAll({
+      where: { userId },
       include: [
         {
-          model: Assignment,
-          as: "assignments",
-          where: { isActive: true },
-          required: false,
-          include: [
-            {
-              model: Vehicle,
-              as: "vehicle",
-            },
-          ],
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "licensePlate", "model", "brand", "status"],
         },
       ],
     })
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Usuario no encontrado",
+    const totalAssignments = assignments.length
+    const activeAssignments = assignments.filter((a) => a.isActive).length
+    const assignedVehicles = activeAssignments
+
+    // Get recent GPS locations for user's vehicles
+    const vehicleIds = assignments.filter((a) => a.isActive).map((a) => a.vehicleId)
+
+    let recentLocations = 0
+    if (vehicleIds.length > 0) {
+      recentLocations = await GpsLocation.count({
+        where: {
+          vehicleId: { [Op.in]: vehicleIds },
+          gpsTimestamp: {
+            [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+          },
+        },
       })
     }
 
     const stats = {
-      assignedVehicles: user.assignments?.length || 0,
-      totalAssignments: await Assignment.count({ where: { userId } }),
-      activeAssignments: await Assignment.count({ where: { userId, isActive: true } }),
+      assignedVehicles,
+      totalAssignments,
+      activeAssignments,
+      recentLocations,
     }
 
     res.json({
@@ -325,24 +296,16 @@ export const getUserVehicles = async (req, res) => {
         {
           model: Vehicle,
           as: "vehicle",
-          include: [
-            {
-              model: GpsLocation,
-              as: "gpsLocations",
-              limit: 1,
-              order: [["gpsTimestamp", "DESC"]],
-              required: false,
-            },
-          ],
+          attributes: ["id", "licensePlate", "model", "brand", "status", "year"],
         },
       ],
+      order: [["createdAt", "DESC"]],
     })
 
     const vehicles = assignments.map((assignment) => ({
       ...assignment.vehicle.toJSON(),
-      lastLocation: assignment.vehicle.gpsLocations?.[0] || null,
-      assignmentDate: assignment.assignmentDate,
-      assignmentNotes: assignment.notes,
+      assignmentId: assignment.id,
+      assignedAt: assignment.createdAt,
     }))
 
     res.json({
@@ -351,6 +314,48 @@ export const getUserVehicles = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en getUserVehicles:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+}
+
+export const getUserActivity = async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { limit = 10 } = req.query
+
+    // Get recent assignments
+    const recentAssignments = await Assignment.findAll({
+      where: { userId },
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "licensePlate", "model", "brand"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: Number.parseInt(limit),
+    })
+
+    // Format activity data
+    const activity = recentAssignments.map((assignment) => ({
+      id: assignment.id,
+      type: "assignment",
+      description: `Vehículo ${assignment.vehicle.licensePlate} ${assignment.isActive ? "asignado" : "desasignado"}`,
+      vehicle: assignment.vehicle,
+      createdAt: assignment.createdAt,
+      isActive: assignment.isActive,
+    }))
+
+    res.json({
+      success: true,
+      data: activity,
+    })
+  } catch (error) {
+    logger.error("Error en getUserActivity:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",

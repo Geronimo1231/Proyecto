@@ -1,5 +1,7 @@
 import { Assignment, User, Vehicle } from "../models/index.js"
-import { logger } from "../config/database.js"
+import pkg from "../config/config.cjs"
+const { logger } = pkg
+
 
 export const getAllAssignments = async (req, res) => {
   try {

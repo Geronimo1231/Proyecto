@@ -1,9 +1,9 @@
 import express from "express"
 import {
-  getAllGpsLocations,
-  getLatestLocations,
+  getAllVehicleLocations,
+  getLatestVehicleLocation,
   createGpsLocation,
-  getVehicleLocationHistory,
+  getVehicleLocations,
   getUserVehicleLocations,
   bulkCreateGpsLocations,
 } from "../controllers/gpsController.js"
@@ -17,9 +17,9 @@ router.use(authenticateToken)
 router.get("/user/locations", getUserVehicleLocations)
 
 // Rutas públicas para usuarios autenticados
-router.get("/", getAllGpsLocations)
-router.get("/latest", getLatestLocations)
-router.get("/vehicles/:vehicleId/history", getVehicleLocationHistory)
+router.get("/", getAllVehicleLocations)
+router.get("/latest", getLatestVehicleLocation)
+router.get("/vehicles/:vehicleId/history", getVehicleLocations)
 
 // Rutas para crear ubicaciones (pueden ser usadas por dispositivos GPS)
 router.post("/", validateGpsLocation, createGpsLocation)

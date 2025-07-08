@@ -1,127 +1,14 @@
-import { GpsLocation, Vehicle, User, Assignment } from "../models/index.js"
-import { logger } from "../config/database.js"
+import { GpsLocation, Vehicle, Assignment } from "../models/index.js"
+import pkg from "../config/config.cjs"
+const { logger } = pkg
+
 import { Op } from "sequelize"
-import { emitGpsUpdate, emitBulkGpsUpdate } from "../server.js"
-
-export const getAllGpsLocations = async (req, res) => {
-  try {
-    const { vehicleId, startDate, endDate, page = 1, limit = 100 } = req.query
-
-    const whereClause = {}
-    if (vehicleId) whereClause.vehicleId = vehicleId
-    if (startDate && endDate) {
-      whereClause.gpsTimestamp = {
-        [Op.between]: [new Date(startDate), new Date(endDate)],
-      }
-    }
-
-    const offset = (page - 1) * limit
-
-    const { count, rows: locations } = await GpsLocation.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand"],
-          include: [
-            {
-              model: Assignment,
-              as: "assignments",
-              where: { isActive: true },
-              required: false,
-              include: [
-                {
-                  model: User,
-                  as: "user",
-                  attributes: ["id", "firstName", "lastName"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      limit: Number.parseInt(limit),
-      offset: Number.parseInt(offset),
-      order: [["gpsTimestamp", "DESC"]],
-    })
-
-    res.json({
-      success: true,
-      data: locations,
-      pagination: {
-        total: count,
-        page: Number.parseInt(page),
-        limit: Number.parseInt(limit),
-        totalPages: Math.ceil(count / limit),
-      },
-    })
-  } catch (error) {
-    logger.error("Error en getAllGpsLocations:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    })
-  }
-}
-
-export const getLatestLocations = async (req, res) => {
-  try {
-    // Obtener la última ubicación de cada vehículo
-    const locations = await GpsLocation.findAll({
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status"],
-          include: [
-            {
-              model: Assignment,
-              as: "assignments",
-              where: { isActive: true },
-              required: false,
-              include: [
-                {
-                  model: User,
-                  as: "user",
-                  attributes: ["id", "firstName", "lastName"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      order: [["vehicleId"], ["gpsTimestamp", "DESC"]],
-    })
-
-    // Filtrar para obtener solo la última ubicación por vehículo
-    const latestByVehicle = new Map()
-    locations.forEach((location) => {
-      if (!latestByVehicle.has(location.vehicleId)) {
-        latestByVehicle.set(location.vehicleId, location)
-      }
-    })
-
-    const latestLocations = Array.from(latestByVehicle.values())
-
-    res.json({
-      success: true,
-      data: latestLocations,
-    })
-  } catch (error) {
-    logger.error("Error en getLatestLocations:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    })
-  }
-}
 
 export const createGpsLocation = async (req, res) => {
   try {
-    const { vehicleId, latitude, longitude, speed = 0, direction = 0, gpsTimestamp } = req.body
+    const { vehicleId, latitude, longitude, speed, heading, altitude, accuracy } = req.body
 
-    // Verificar que el vehículo existe
+    // Verify vehicle exists
     const vehicle = await Vehicle.findByPk(vehicleId)
     if (!vehicle) {
       return res.status(404).json({
@@ -130,51 +17,23 @@ export const createGpsLocation = async (req, res) => {
       })
     }
 
-    // Crear la ubicación GPS
-    const location = await GpsLocation.create({
+    const gpsLocation = await GpsLocation.create({
       vehicleId,
       latitude,
       longitude,
-      speed,
-      direction,
-      gpsTimestamp: gpsTimestamp || new Date(),
+      speed: speed || 0,
+      heading: heading || 0,
+      altitude: altitude || 0,
+      accuracy: accuracy || 0,
+      gpsTimestamp: new Date(),
     })
 
-    // Obtener la ubicación completa con información del vehículo
-    const fullLocation = await GpsLocation.findByPk(location.id, {
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand"],
-          include: [
-            {
-              model: Assignment,
-              as: "assignments",
-              where: { isActive: true },
-              required: false,
-              include: [
-                {
-                  model: User,
-                  as: "user",
-                  attributes: ["id", "firstName", "lastName"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    })
-
-    // Emitir actualización en tiempo real
-    emitGpsUpdate(vehicleId, fullLocation)
-
-    logger.info(`Nueva ubicación GPS registrada para vehículo ${vehicle.licensePlate}`)
+    logger.info(`Nueva ubicación GPS creada para vehículo ${vehicleId}`)
 
     res.status(201).json({
       success: true,
-      message: "Ubicación GPS registrada exitosamente",
-      data: fullLocation,
+      message: "Ubicación GPS registrada correctamente",
+      data: gpsLocation,
     })
   } catch (error) {
     logger.error("Error en createGpsLocation:", error)
@@ -185,21 +44,29 @@ export const createGpsLocation = async (req, res) => {
   }
 }
 
-export const getVehicleLocationHistory = async (req, res) => {
+export const getVehicleLocations = async (req, res) => {
   try {
     const { vehicleId } = req.params
-    const { hours = 24, limit = 1000 } = req.query
+    const { limit = 100, startDate, endDate } = req.query
 
-    const startDate = new Date()
-    startDate.setHours(startDate.getHours() - Number.parseInt(hours))
+    const whereClause = { vehicleId }
+
+    if (startDate && endDate) {
+      whereClause.gpsTimestamp = {
+        [Op.between]: [new Date(startDate), new Date(endDate)],
+      }
+    } else if (startDate) {
+      whereClause.gpsTimestamp = {
+        [Op.gte]: new Date(startDate),
+      }
+    } else if (endDate) {
+      whereClause.gpsTimestamp = {
+        [Op.lte]: new Date(endDate),
+      }
+    }
 
     const locations = await GpsLocation.findAll({
-      where: {
-        vehicleId,
-        gpsTimestamp: {
-          [Op.gte]: startDate,
-        },
-      },
+      where: whereClause,
       include: [
         {
           model: Vehicle,
@@ -207,8 +74,8 @@ export const getVehicleLocationHistory = async (req, res) => {
           attributes: ["id", "licensePlate", "model", "brand"],
         },
       ],
+      order: [["gpsTimestamp", "DESC"]],
       limit: Number.parseInt(limit),
-      order: [["gpsTimestamp", "ASC"]],
     })
 
     res.json({
@@ -216,7 +83,98 @@ export const getVehicleLocationHistory = async (req, res) => {
       data: locations,
     })
   } catch (error) {
-    logger.error("Error en getVehicleLocationHistory:", error)
+    logger.error("Error en getVehicleLocations:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+}
+
+export const getLatestVehicleLocation = async (req, res) => {
+  try {
+    const { vehicleId } = req.params
+
+    const location = await GpsLocation.findOne({
+      where: { vehicleId },
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "licensePlate", "model", "brand"],
+        },
+      ],
+      order: [["gpsTimestamp", "DESC"]],
+    })
+
+    if (!location) {
+      return res.status(404).json({
+        success: false,
+        message: "No se encontraron ubicaciones para este vehículo",
+      })
+    }
+
+    res.json({
+      success: true,
+      data: location,
+    })
+  } catch (error) {
+    logger.error("Error en getLatestVehicleLocation:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+}
+
+export const getAllVehicleLocations = async (req, res) => {
+  try {
+    const { limit = 1000, latest = false } = req.query
+
+    let locations
+
+    if (latest === "true") {
+      // Get latest location for each vehicle
+      const vehicles = await Vehicle.findAll({
+        attributes: ["id"],
+      })
+
+      const locationPromises = vehicles.map((vehicle) =>
+        GpsLocation.findOne({
+          where: { vehicleId: vehicle.id },
+          include: [
+            {
+              model: Vehicle,
+              as: "vehicle",
+              attributes: ["id", "licensePlate", "model", "brand", "status"],
+            },
+          ],
+          order: [["gpsTimestamp", "DESC"]],
+        }),
+      )
+
+      const allLocations = await Promise.all(locationPromises)
+      locations = allLocations.filter((location) => location !== null)
+    } else {
+      locations = await GpsLocation.findAll({
+        include: [
+          {
+            model: Vehicle,
+            as: "vehicle",
+            attributes: ["id", "licensePlate", "model", "brand", "status"],
+          },
+        ],
+        order: [["gpsTimestamp", "DESC"]],
+        limit: Number.parseInt(limit),
+      })
+    }
+
+    res.json({
+      success: true,
+      data: locations,
+    })
+  } catch (error) {
+    logger.error("Error en getAllVehicleLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -227,17 +185,12 @@ export const getVehicleLocationHistory = async (req, res) => {
 export const getUserVehicleLocations = async (req, res) => {
   try {
     const userId = req.user.id
+    const { limit = 100, latest = false } = req.query
 
-    // Obtener vehículos asignados al usuario
+    // Get user's assigned vehicles
     const assignments = await Assignment.findAll({
       where: { userId, isActive: true },
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand"],
-        },
-      ],
+      attributes: ["vehicleId"],
     })
 
     const vehicleIds = assignments.map((assignment) => assignment.vehicleId)
@@ -246,40 +199,82 @@ export const getUserVehicleLocations = async (req, res) => {
       return res.json({
         success: true,
         data: [],
+        message: "No tienes vehículos asignados",
       })
     }
 
-    // Obtener las últimas ubicaciones de los vehículos del usuario
-    const locations = await GpsLocation.findAll({
-      where: {
-        vehicleId: { [Op.in]: vehicleIds },
-      },
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status"],
+    let locations
+
+    if (latest === "true") {
+      // Get latest location for each assigned vehicle
+      const locationPromises = vehicleIds.map((vehicleId) =>
+        GpsLocation.findOne({
+          where: { vehicleId },
+          include: [
+            {
+              model: Vehicle,
+              as: "vehicle",
+              attributes: ["id", "licensePlate", "model", "brand", "status"],
+            },
+          ],
+          order: [["gpsTimestamp", "DESC"]],
+        }),
+      )
+
+      const allLocations = await Promise.all(locationPromises)
+      locations = allLocations.filter((location) => location !== null)
+    } else {
+      locations = await GpsLocation.findAll({
+        where: {
+          vehicleId: { [Op.in]: vehicleIds },
         },
-      ],
-      order: [["vehicleId"], ["gpsTimestamp", "DESC"]],
-    })
-
-    // Filtrar para obtener solo la última ubicación por vehículo
-    const latestByVehicle = new Map()
-    locations.forEach((location) => {
-      if (!latestByVehicle.has(location.vehicleId)) {
-        latestByVehicle.set(location.vehicleId, location)
-      }
-    })
-
-    const userLocations = Array.from(latestByVehicle.values())
+        include: [
+          {
+            model: Vehicle,
+            as: "vehicle",
+            attributes: ["id", "licensePlate", "model", "brand", "status"],
+          },
+        ],
+        order: [["gpsTimestamp", "DESC"]],
+        limit: Number.parseInt(limit),
+      })
+    }
 
     res.json({
       success: true,
-      data: userLocations,
+      data: locations,
     })
   } catch (error) {
     logger.error("Error en getUserVehicleLocations:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+    })
+  }
+}
+
+export const deleteOldLocations = async (req, res) => {
+  try {
+    const { days = 30 } = req.query
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+
+    const deletedCount = await GpsLocation.destroy({
+      where: {
+        gpsTimestamp: {
+          [Op.lt]: cutoffDate,
+        },
+      },
+    })
+
+    logger.info(`Eliminadas ${deletedCount} ubicaciones GPS antiguas`)
+
+    res.json({
+      success: true,
+      message: `Se eliminaron ${deletedCount} ubicaciones GPS anteriores a ${days} días`,
+      deletedCount,
+    })
+  } catch (error) {
+    logger.error("Error en deleteOldLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -291,48 +286,53 @@ export const bulkCreateGpsLocations = async (req, res) => {
   try {
     const { locations } = req.body
 
+    // Validación básica del array recibido
     if (!Array.isArray(locations) || locations.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Se requiere un array de ubicaciones",
+        message: "Debes enviar un array de ubicaciones GPS válidas.",
       })
     }
 
-    // Validar que todos los vehículos existen
-    const vehicleIds = [...new Set(locations.map((loc) => loc.vehicleId))]
-    const vehicles = await Vehicle.findAll({
+    // Extrae los IDs únicos de vehículos del array
+    const vehicleIds = [...new Set(locations.map(loc => loc.vehicleId))]
+
+    // Verifica que los vehículos existen
+    const existingVehicles = await Vehicle.findAll({
       where: { id: { [Op.in]: vehicleIds } },
       attributes: ["id"],
     })
 
-    const existingVehicleIds = vehicles.map((v) => v.id)
-    const invalidVehicleIds = vehicleIds.filter((id) => !existingVehicleIds.includes(id))
+    const existingVehicleIds = new Set(existingVehicles.map(v => v.id))
 
-    if (invalidVehicleIds.length > 0) {
+    // Filtra solo ubicaciones con vehicleId válido
+    const validLocations = locations.filter(loc => existingVehicleIds.has(loc.vehicleId))
+
+    if (validLocations.length === 0) {
       return res.status(400).json({
         success: false,
-        message: `Vehículos no encontrados: ${invalidVehicleIds.join(", ")}`,
+        message: "Ninguna ubicación tiene un vehicleId válido.",
       })
     }
 
-    // Crear ubicaciones en lote
-    const createdLocations = await GpsLocation.bulkCreate(
-      locations.map((loc) => ({
-        ...loc,
-        gpsTimestamp: loc.gpsTimestamp || new Date(),
-      })),
-      { validate: true },
-    )
+    // Inserta las ubicaciones en la base de datos
+    const created = await GpsLocation.bulkCreate(validLocations.map(loc => ({
+      vehicleId: loc.vehicleId,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      speed: loc.speed || 0,
+      heading: loc.heading || 0,
+      altitude: loc.altitude || 0,
+      accuracy: loc.accuracy || 0,
+      gpsTimestamp: loc.gpsTimestamp ? new Date(loc.gpsTimestamp) : new Date(),
+    })))
 
-    // Emitir actualizaciones en tiempo real
-    emitBulkGpsUpdate(createdLocations)
-
-    logger.info(`${createdLocations.length} ubicaciones GPS creadas en lote`)
+    logger.info(`Se crearon ${created.length} ubicaciones GPS en bulk`)
 
     res.status(201).json({
       success: true,
-      message: `${createdLocations.length} ubicaciones GPS registradas exitosamente`,
-      data: createdLocations,
+      message: `Se crearon ${created.length} ubicaciones GPS correctamente.`,
+      data: created,
     })
   } catch (error) {
     logger.error("Error en bulkCreateGpsLocations:", error)

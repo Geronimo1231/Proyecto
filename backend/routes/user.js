@@ -1,8 +1,7 @@
 import express from "express"
 import { authenticateToken } from "../middleware/auth.js"
 import { getUserDashboard, getUserProfile, updateUserProfile } from "../controllers/userDashboardController.js"
-import { getUserStats, getUserVehicles } from "../controllers/userController.js"
-import { getUserActivity } from "../controllers/dashboardController.js"
+import { getUserStats, getUserVehicles, getUserActivity } from "../controllers/userController.js"
 import { getUserVehicleLocations } from "../controllers/gpsController.js"
 
 const router = express.Router()

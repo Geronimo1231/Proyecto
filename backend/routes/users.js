@@ -1,43 +1,17 @@
 import express from "express"
-import {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  getUserStats,
-  getUserVehicles,
-} from "../controllers/userController.js"
-import { requireRole, authenticateToken } from "../middleware/auth.js"
-import { validateUser } from "../middleware/validation.js"
+import { authenticateToken, requireRole } from "../middleware/auth.js"
+import { getAllUsers, getUserById, createUser, updateUser, deleteUser } from "../controllers/userController.js"
 
 const router = express.Router()
+
+// Todas las rutas requieren autenticación
 router.use(authenticateToken)
 
-// Rutas para usuarios normales
-router.get("/stats", getUserStats)
-router.get("/vehicles", getUserVehicles)
-router.get("/activity", async (req, res) => {
-  try {
-    const userId = req.user.id
-    // Implementar lógica para obtener actividad del usuario
-    res.json({
-      success: true,
-      data: [],
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    })
-  }
-})
-
-// Rutas para administradores
-router.get("/", requireRole, getAllUsers)
-router.get("/:id", requireRole, getUserById)
-router.post("/", requireRole, validateUser, createUser)
-router.put("/:id", validateUser, updateUser)
-router.delete("/:id", requireRole, deleteUser)
+// Rutas que requieren rol de administrador
+router.get("/", requireRole(["Admin", "GlobalAdmin"]), getAllUsers)
+router.get("/:id", requireRole(["Admin", "GlobalAdmin"]), getUserById)
+router.post("/", requireRole(["Admin", "GlobalAdmin"]), createUser)
+router.put("/:id", requireRole(["Admin", "GlobalAdmin"]), updateUser)
+router.delete("/:id", requireRole(["GlobalAdmin"]), deleteUser)
 
 export default router

@@ -9,4 +9,4 @@ router.post("/login", validateLogin, login)
 router.post("/register", validateUser, register)
 router.get("/me", authenticateToken, getMe)
 
-export default router
+export default router   // THIS line is critical for default export

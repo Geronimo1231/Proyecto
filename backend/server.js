@@ -1,8 +1,10 @@
 import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
-import { sequelize } from "./config/database.js"
+import sequelize from "./config/database.js"  
 import "./models/index.js"
+
+
 
 import configFile from "./config/config.cjs"
 const appConfig = configFile.app

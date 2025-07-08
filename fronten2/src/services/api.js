@@ -1,16 +1,16 @@
 import axios from "axios"
-import { toast } from 'vue3-toastify'
 
-// Usa la variable de entorno de Vue CLI con prefijo VUE_APP_
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_APP_API_URL || "http://localhost:8080/api",
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 })
 
-// Interceptor para requests
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token")
@@ -19,21 +19,24 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error)
+  },
 )
 
-// Interceptor para responses
+// Response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response
+  },
   (error) => {
     if (error.response?.status === 401) {
+      // Token expired or invalid
       localStorage.removeItem("token")
       window.location.href = "/login"
-    } else if (error.response?.status >= 500) {
-      toast.error("Error del servidor. Intente nuevamente.")
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 export default api

@@ -121,7 +121,7 @@ const navigation = [
   { name: 'Usuarios', href: '/usuarios', icon: UsersIcon },
   { name: 'Asignaciones', href: '/asignaciones', icon: ClipboardDocumentListIcon },
   { name: 'Mapa GPS', href: '/mapa', icon: MapPinIcon },
-  { name: 'Registrar', href: '/registrar', icon: UserPlusIcon }
+  //{ name: 'Registrar', href: '/registrar', icon: UserPlusIcon }
 ]
 
 const logout = () => {
