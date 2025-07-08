@@ -3,7 +3,7 @@ import sequelize from '../config/database.js'
 
 
 const Vehicle = sequelize.define(
-  "Vehicle",
+  "Vehicles",
   {
     id: {
       type: DataTypes.INTEGER,

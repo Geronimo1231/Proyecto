@@ -46,15 +46,27 @@ app.use("/api/brands", brandRoutes)
 app.use("/api/roles", roleRoutes)
 app.use("/api/vehicles-types", vehicleTypeRoutes)
 
+let socket;
+
 export function emitGpsUpdate(data) {
-  // Aquí pones la lógica que emite una actualización GPS, por ejemplo vía WebSocket
-  console.log("emitGpsUpdate", data)
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'gps-update', payload: data }));
+  } else {
+    console.warn('WebSocket no está conectado');
+  }
+  console.log("emitGpsUpdate", data);
 }
 
+
 export function emitBulkGpsUpdate(dataArray) {
-  // Aquí la lógica para múltiples actualizaciones
-  console.log("emitBulkGpsUpdate", dataArray)
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'bulk-gps-update', payload: dataArray }));
+  } else {
+    console.warn('WebSocket no está conectado');
+  }
+  console.log("emitBulkGpsUpdate", dataArray);
 }
+
 
 
 // Ruta de health check
