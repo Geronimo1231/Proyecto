@@ -8,13 +8,13 @@
         </h2>
       </div>
       <div class="mt-4 flex md:ml-4 md:mt-0">
-        <button
-          @click="showAssignModal = true"
+        <router-link
+          to="/asignaciones/crear"
           class="ml-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >
           <PlusIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
           Nueva Asignación
-        </button>
+        </router-link>
       </div>
     </div>
 
@@ -93,41 +93,41 @@
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
-                    :src="assignment.usuario?.foto_perfil || '/placeholder.svg?height=40&width=40'"
-                    :alt="assignment.usuario?.nombre"
+                    :src="assignment.user?.photo || '/placeholder.svg?height=40&width=40'"
+                    :alt="assignment.user?.firstName"
                   />
                 </div>
                 <div class="ml-4">
                   <div class="text-sm font-medium text-gray-900">
-                    {{ assignment.usuario?.nombre }} {{ assignment.usuario?.apellido }}
+                    {{ assignment.user?.firstName }} {{ assignment.user?.lastName }}
                   </div>
-                  <div class="text-sm text-gray-500">{{ assignment.usuario?.email }}</div>
+                  <div class="text-sm text-gray-500">{{ assignment.user?.email }}</div>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ assignment.vehiculo?.matricula }}</div>
+              <div class="text-sm font-medium text-gray-900">{{ assignment.vehicle?.licensePlate }}</div>
               <div class="text-sm text-gray-500">
-                {{ assignment.vehiculo?.marca?.nombre }} {{ assignment.vehiculo?.modelo }}
+                {{ assignment.vehicle?.brand }} {{ assignment.vehicle?.model }}
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(assignment.fecha_assignment) }}
+              {{ formatDate(assignment.createdAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="assignment.activa ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                :class="assignment.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
               >
-                {{ assignment.activa ? 'Activa' : 'Inactiva' }}
+                {{ assignment.isActive ? 'Activa' : 'Inactiva' }}
               </span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-              {{ assignment.observaciones || 'Sin observaciones' }}
+              {{ assignment.notes || 'Sin observaciones' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
               <button
-                v-if="assignment.activa"
+                v-if="assignment.isActive"
                 @click="unassignVehicle(assignment)"
                 class="text-red-600 hover:text-red-900"
               >
@@ -144,78 +144,6 @@
         </tbody>
       </table>
     </div>
-
-    <!-- Assign Vehicle Modal -->
-    <div v-if="showAssignModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="assignVehicle">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg font-medium text-gray-900 mb-4">Nueva Asignación de Vehículo</h3>
-              
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Usuario *</label>
-                  <select
-                    v-model="assignForm.usuario_id"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="">Seleccionar usuario</option>
-                    <option v-for="usuario in usersDisponibles" :key="usuario.id" :value="usuario.id">
-                      {{ usuario.firstName }} {{ usuario.lastName }} ({{ usuario.email }})
-                    </option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Vehículo *</label>
-                  <select
-                    v-model="assignForm.vehiculo_id"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="">Seleccionar vehículo</option>
-                    <option v-for="vehiculo in vehicleDisponibles" :key="vehiculo.id" :value="vehiculo.id">
-                      {{ vehiculo.licensePlate }} - {{ vehiculo.brand }} {{ vehiculo.model }}
-                    </option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                  <textarea
-                    v-model="assignForm.observaciones"
-                    rows="3"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Observaciones sobre la asignación..."
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-              <button
-                type="submit"
-                :disabled="loading"
-                class="w-full inline-flex justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:opacity-50"
-              >
-                {{ loading ? 'Asignando...' : 'Asignar Vehículo' }}
-              </button>
-              <button
-                type="button"
-                @click="closeAssignModal"
-                class="mt-3 w-full inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -228,10 +156,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const assignments = ref([])
-const usersDisponibles = ref([])
-const vehicleDisponibles = ref([])
 const loading = ref(false)
-const showAssignModal = ref(false)
 
 const filters = ref({
   usuario: '',
@@ -239,23 +164,17 @@ const filters = ref({
   estado: ''
 })
 
-const assignForm = ref({
-  usuario_id: '',
-  vehiculo_id: '',
-  observaciones: ''
-})
-
 const filteredAssignments = computed(() => {
   return assignments.value.filter(assignment => {
     const matchesUsuario = !filters.value.usuario || 
-      `${assignment.usuario?.nombre} ${assignment.usuario?.apellido}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
+      `${assignment.user?.firstName} ${assignment.user?.lastName}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
     
     const matchesVehiculo = !filters.value.vehiculo || 
-      assignment.vehiculo?.matricula.toLowerCase().includes(filters.value.vehiculo.toLowerCase()) ||
-      assignment.vehiculo?.modelo.toLowerCase().includes(filters.value.vehiculo.toLowerCase())
+      assignment.vehicle?.licensePlate.toLowerCase().includes(filters.value.vehiculo.toLowerCase()) ||
+      assignment.vehicle?.model.toLowerCase().includes(filters.value.vehiculo.toLowerCase())
     
     const matchesEstado = filters.value.estado === '' || 
-      assignment.activa.toString() === filters.value.estado
+      assignment.isActive.toString() === filters.value.estado
     
     return matchesUsuario && matchesVehiculo && matchesEstado
   })
@@ -263,37 +182,19 @@ const filteredAssignments = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [assignmentsRes, usersRes, vehiclesRes] = await Promise.all([
-      api.get('/assignments'),
-      api.get('/users?role=User'),
-      api.get('/vehicles?status=available')
-    ])
-    
-    assignments.value = assignmentsRes.data.data || []
-    usersDisponibles.value = usersRes.data.data || []
-    vehicleDisponibles.value = vehiclesRes.data.vehicles || vehiclesRes.data.data || []
+    loading.value = true
+    const response = await api.get('/assignments')
+    assignments.value = response.data.data || []
   } catch (error) {
     console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
-  }
-}
-
-const assignVehicle = async () => {
-  try {
-    loading.value = true
-    await api.post('/assignments', assignForm.value)
-    toast.success('Vehículo asignado correctamente')
-    await fetchData()
-    closeAssignModal()
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Error al asignar el vehículo')
   } finally {
     loading.value = false
   }
 }
 
 const unassignVehicle = async (assignment) => {
-  if (confirm(`¿Estás seguro de desasignar el vehículo ${assignment.vehiculo?.matricula}?`)) {
+  if (confirm(`¿Estás seguro de desasignar el vehículo ${assignment.vehicle?.licensePlate}?`)) {
     try {
       await api.patch(`/assignments/${assignment.id}/unassign`)
       toast.success('Vehículo desasignado correctamente')
@@ -306,15 +207,6 @@ const unassignVehicle = async (assignment) => {
 
 const editAssignment = (assignment) => {
   console.log('Editar asignación:', assignment)
-}
-
-const closeAssignModal = () => {
-  showAssignModal.value = false
-  assignForm.value = {
-    usuario_id: '',
-    vehiculo_id: '',
-    observaciones: ''
-  }
 }
 
 const resetFilters = () => {

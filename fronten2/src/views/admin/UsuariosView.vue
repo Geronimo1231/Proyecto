@@ -8,13 +8,13 @@
         </h2>
       </div>
       <div class="mt-4 flex md:ml-4 md:mt-0">
-        <button
-          @click="showAddModal = true"
+        <router-link
+          to="/usuarios/crear"
           class="ml-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >
           <PlusIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
           Agregar Usuario
-        </button>
+        </router-link>
       </div>
     </div>
 
@@ -67,9 +67,6 @@
               Rol
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Vehículos
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Estado
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -84,7 +81,7 @@
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
-                    :src="usuario.foto_perfil || '/placeholder.svg?height=40&width=40'"
+                    :src="usuario.photo || '/placeholder.svg?height=40&width=40'"
                     :alt="usuario.firstName"
                   />
                 </div>
@@ -107,14 +104,12 @@
                 {{ usuario.role === 'Admin' ? 'Administrador' : 'Usuario' }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ usuario.vehicle_asignados || 0 }}
-            </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800"
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                :class="usuario.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
               >
-                Activo
+                {{ usuario.isActive ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -126,9 +121,9 @@
               </button>
               <button
                 @click="toggleUserStatus(usuario)"
-                class="text-red-600 hover:text-red-900"
+                :class="usuario.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
               >
-                Desactivar
+                {{ usuario.isActive ? 'Desactivar' : 'Activar' }}
               </button>
             </td>
           </tr>
@@ -136,17 +131,15 @@
       </table>
     </div>
 
-    <!-- Add/Edit User Modal -->
-    <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
+    <!-- Edit User Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form @submit.prevent="saveUser">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg font-medium text-gray-900 mb-4">
-                {{ showAddModal ? 'Agregar Nuevo Usuario' : 'Editar Usuario' }}
-              </h3>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Editar Usuario</h3>
               
               <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
@@ -198,24 +191,9 @@
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   >
                     <option value="">Seleccionar rol</option>
-                    <option v-for="rol in roles" :key="rol.id" :value="rol.nombre === 'Admin' ? 'Admin' : 'User'">
-                      {{ rol.nombre === 'Admin' ? 'Administrador' : 'Usuario' }}
-                    </option>
+                    <option value="Admin">Administrador</option>
+                    <option value="User">Usuario</option>
                   </select>
-                </div>
-                
-                <div v-if="showAddModal">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                  <input
-                    v-model="userForm.password"
-                    type="password"
-                    required
-                    minlength="8"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                  <p class="mt-1 text-xs text-gray-500">
-                    Mínimo 8 caracteres, debe incluir mayúscula, minúscula, número y carácter especial
-                  </p>
                 </div>
               </div>
             </div>
@@ -250,9 +228,7 @@ import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
 const users = ref([])
-const roles = ref([])
 const loading = ref(false)
-const showAddModal = ref(false)
 const showEditModal = ref(false)
 
 const filters = ref({
@@ -261,11 +237,11 @@ const filters = ref({
 })
 
 const userForm = ref({
+  id: null,
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
-  password: '',
   role: ''
 })
 
@@ -284,16 +260,14 @@ const filteredUsers = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [usersRes, rolesRes] = await Promise.all([
-      api.get('/users'),
-      api.get('/roles')
-    ])
-    
-    users.value = usersRes.data.data || []
-    roles.value = rolesRes.data.data || []
+    loading.value = true
+    const response = await api.get('/users')
+    users.value = response.data.data?.users || response.data.data || []
   } catch (error) {
     console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -301,13 +275,8 @@ const saveUser = async () => {
   try {
     loading.value = true
     
-    if (showEditModal.value) {
-      await api.put(`/users/${userForm.value.id}`, userForm.value)
-      toast.success('Usuario actualizado correctamente')
-    } else {
-      await api.post('/users', userForm.value)
-      toast.success('Usuario agregado correctamente')
-    }
+    await api.put(`/users/${userForm.value.id}`, userForm.value)
+    toast.success('Usuario actualizado correctamente')
     
     await fetchData()
     closeModal()
@@ -325,23 +294,25 @@ const editUser = (usuario) => {
 
 const toggleUserStatus = async (usuario) => {
   try {
-    await api.patch(`/users/${usuario.id}/toggle-status`)
-    toast.success('Estado del usuario cambiado correctamente')
-    await fetchData()
+    const action = usuario.isActive ? 'desactivar' : 'activar'
+    if (confirm(`¿Estás seguro de ${action} este usuario?`)) {
+      await api.patch(`/users/${usuario.id}/toggle-status`)
+      toast.success(`Usuario ${action}do correctamente`)
+      await fetchData()
+    }
   } catch (error) {
     toast.error('Error al cambiar el estado del usuario')
   }
 }
 
 const closeModal = () => {
-  showAddModal.value = false
   showEditModal.value = false
   userForm.value = {
+    id: null,
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    password: '',
     role: ''
   }
 }

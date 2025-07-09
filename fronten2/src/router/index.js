@@ -13,6 +13,12 @@ import AdminMapa from "../views/admin/MapaView.vue";
 import AdminRegistrar from "../views/admin/RegistrarView.vue";
 import AdminUsuarios from "../views/admin/UsuariosView.vue";
 import AdminVehiculos from "../views/admin/VehiculosView.vue";
+import UsuarioCrearView from "../views/admin/UsuarioCrearView.vue"
+import VehiculoCrearView from "../views/admin/VehiculoCrearView.vue"
+import VehiculoDetalleView from "../views/admin/VehiculoDetalleView.vue"
+import VehiculoEditarView from "../views/admin/VehiculoEditarView.vue"
+import AsignacionCrearView from "../views/admin/AsignacionCrearView.vue"
+import PerfilAdminView from "../views/admin/PerfilAdminView.vue"
 
 // Vistas de usuario
 import UserLayout from "../layouts/UserLayout.vue";
@@ -40,11 +46,33 @@ const routes = [
     component: AdminVehiculos,
     meta: { requiresAuth: false },
   },
+  {
+    path: "/vehiculos/crear",
+    name: "VehiculoCrear",
+    component: VehiculoCrearView,
+  },
+  {
+    path: "/vehiculos/:id",
+    name: "VehiculoDetalle",
+    component: VehiculoDetalleView,
+    props: true,
+  },
+  {
+    path: "/vehiculos/:id/editar",
+    name: "VehiculoEditar",
+    component: VehiculoEditarView,
+    props: true,
+  },
    {
     path: "/asignaciones",
     name: "asignaciones",
     component: AdminAsignaciones,
     meta: { requiresAuth: false },
+  },
+  {
+    path: "/asignaciones/crear",
+    name: "AsignacionCrear",
+    component: AsignacionCrearView,
   },
   {
     path: "/mapa",
@@ -63,6 +91,11 @@ const routes = [
     name: "usuarios",
     component: AdminUsuarios,
     meta: { requiresAuth: false },
+  },
+  {
+    path: "/usuarios/crear",
+    name: "UsuarioCrear",
+    component: UsuarioCrearView,
   },
     {
     path: "/dashboarduser",
@@ -101,6 +134,14 @@ const routes = [
       { path: "registrar", name: "AdminRegistrar", component: AdminRegistrar },
       { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
       { path: "vehiculos", name: "AdminVehiculos", component: AdminVehiculos },
+      { path: "usuarios/crear", name: "UsuarioCrearView", component: UsuarioCrearView },
+      { path: "vehiculos/crear", name: "VehiculoCrearView", component: VehiculoCrearView },
+      { path: "vehiculos/:id", name: "VehiculoDetalleView", component: VehiculoDetalleView },
+      { path: "vehiculos/:id/editar", name: "VehiculoEditarView", component: VehiculoEditarView },
+      { path: "asignaciones/crear", name: "AsignacionCrearView", component: AsignacionCrearView },
+      { path: "perfil", name: "PerfilAdminView", component: PerfilAdminView },
+      
+
     ],
   },
   {
