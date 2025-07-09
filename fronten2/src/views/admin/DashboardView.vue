@@ -41,7 +41,7 @@
         </div>
         <div class="bg-gray-50 px-5 py-3">
           <div class="text-sm">
-            <router-link to="/admin/usuarios" class="font-medium text-blue-600 hover:text-blue-500">
+            <router-link to="/usuarios" class="font-medium text-blue-600 hover:text-blue-500">
               Ver todos los usuarios
             </router-link>
           </div>
@@ -65,7 +65,7 @@
         </div>
         <div class="bg-gray-50 px-5 py-3">
           <div class="text-sm">
-            <router-link to="/admin/vehiculos" class="font-medium text-green-600 hover:text-green-500">
+            <router-link to="/vehiculos" class="font-medium text-green-600 hover:text-green-500">
               Ver todos los vehículos
             </router-link>
           </div>
@@ -89,7 +89,7 @@
         </div>
         <div class="bg-gray-50 px-5 py-3">
           <div class="text-sm">
-            <router-link to="/admin/asignaciones" class="font-medium text-yellow-600 hover:text-yellow-500">
+            <router-link to="/asignaciones" class="font-medium text-yellow-600 hover:text-yellow-500">
               Ver asignaciones
             </router-link>
           </div>
@@ -113,7 +113,7 @@
         </div>
         <div class="bg-gray-50 px-5 py-3">
           <div class="text-sm">
-            <router-link to="/admin/mapa" class="font-medium text-purple-600 hover:text-purple-500">
+            <router-link to="/mapa" class="font-medium text-purple-600 hover:text-purple-500">
               Ver mapa GPS
             </router-link>
           </div>

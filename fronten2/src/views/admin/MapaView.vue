@@ -4,111 +4,121 @@
     <div class="md:flex md:items-center md:justify-between">
       <div class="min-w-0 flex-1">
         <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          Mapa de Vehículos
+          Mapa GPS - Todas las Ubicaciones
         </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Ubicación en tiempo real de todos los vehículos
-        </p>
       </div>
-      <div class="mt-4 flex md:ml-4 md:mt-0">
+      <div class="mt-4 flex md:mt-0 space-x-2">
         <button
-          @click="generateMockData"
-          :disabled="loading"
-          class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+          @click="toggleAutoRefresh"
+          :class="[
+            'inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm',
+            autoRefresh 
+              ? 'bg-green-600 text-white hover:bg-green-700' 
+              : 'bg-gray-600 text-white hover:bg-gray-700'
+          ]"
         >
-          <MapPinIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
-          {{ loading ? 'Generando...' : 'Generar Datos GPS' }}
+          <ArrowPathIcon class="-ml-0.5 mr-1.5 h-5 w-5" :class="{ 'animate-spin': autoRefresh }" />
+          {{ autoRefresh ? 'Auto-actualización ON' : 'Auto-actualización OFF' }}
         </button>
         <button
           @click="refreshLocations"
-          :disabled="loading"
-          class="ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+          class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >
-          <ArrowPathIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
-          Actualizar
+          <MapPinIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
+          Actualizar Ubicaciones
         </button>
+      </div>
+    </div>
+
+    <!-- Map Controls -->
+    <div class="bg-white shadow rounded-lg p-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Usuario</label>
+          <select
+            v-model="selectedUser"
+            @change="filterVehicles"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          >
+            <option value="">Todos los usuarios</option>
+            <option v-for="user in users" :key="user.id" :value="user.id">
+              {{ user.nombre }} {{ user.apellido }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Vehículo</label>
+          <select
+            v-model="selectedVehicle"
+            @change="filterVehicles"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          >
+            <option value="">Todos los vehículos</option>
+            <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
+              {{ vehicle.matricula }} - {{ vehicle.modelo }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Mostrar Rutas</label>
+          <div class="flex items-center">
+            <input
+              id="show-routes"
+              v-model="showRoutes"
+              type="checkbox"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label for="show-routes" class="ml-2 block text-sm text-gray-900">
+              Mostrar trayectorias
+            </label>
+          </div>
+        </div>
+        <div class="flex items-end">
+          <button
+            @click="centerMap"
+            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            Centrar Mapa
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Map Container -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-      <div class="p-6">
-        <div id="map" class="h-96 w-full rounded-lg"></div>
-      </div>
+      <div id="map" class="h-96 lg:h-[600px] w-full"></div>
     </div>
 
     <!-- Vehicle List -->
     <div class="bg-white shadow rounded-lg">
       <div class="px-4 py-5 sm:p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Vehículos Activos</h3>
-        
-        <div v-if="vehicles.length === 0" class="text-center py-8">
-          <MapPinIcon class="mx-auto h-12 w-12 text-gray-400" />
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No hay ubicaciones</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            No se encontraron ubicaciones GPS recientes.
-          </p>
-          <div class="mt-6">
-            <button
-              @click="generateMockData"
-              class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-            >
-              <PlusIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
-              Generar Datos de Prueba
-            </button>
-          </div>
-        </div>
-
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Vehículos en Tiempo Real</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
-            v-for="vehicle in vehicles"
-            :key="vehicle.id"
-            class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            v-for="location in filteredLocations"
+            :key="location.vehiculo_id"
+            class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+            @click="focusVehicle(location)"
           >
             <div class="flex items-center justify-between mb-2">
-              <h4 class="font-medium text-gray-900">{{ vehicle.licensePlate }}</h4>
+              <h4 class="font-medium text-gray-900">{{ location.vehiculo?.matricula }}</h4>
               <span
-                :class="[
-                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  getStatusColor(vehicle.status)
-                ]"
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                :class="getSpeedClass(location.velocidad)"
               >
-                {{ getStatusText(vehicle.status) }}
+                {{ location.velocidad }} km/h
               </span>
             </div>
-            
-            <p class="text-sm text-gray-600 mb-2">
-              {{ vehicle.brand }} {{ vehicle.model }}
+            <p class="text-sm text-gray-600 mb-1">
+              {{ location.vehiculo?.marca?.nombre }} {{ location.vehiculo?.modelo }}
             </p>
-            
-            <div v-if="vehicle.lastLocation" class="text-xs text-gray-500 space-y-1">
-              <p>
-                <strong>Última ubicación:</strong>
-                {{ formatDate(vehicle.lastLocation.gpsTimestamp) }}
-              </p>
-              <p>
-                <strong>Coordenadas:</strong>
-                {{ vehicle.lastLocation.latitude.toFixed(6) }}, {{ vehicle.lastLocation.longitude.toFixed(6) }}
-              </p>
-              <p v-if="vehicle.lastLocation.speed">
-                <strong>Velocidad:</strong>
-                {{ Math.round(vehicle.lastLocation.speed) }} km/h
-              </p>
-            </div>
-            
-            <div class="mt-3 flex space-x-2">
-              <button
-                @click="centerMapOnVehicle(vehicle)"
-                class="flex-1 bg-blue-50 text-blue-700 text-xs font-medium py-1 px-2 rounded hover:bg-blue-100"
-              >
-                Ver en Mapa
-              </button>
-              <button
-                @click="viewVehicleHistory(vehicle.id)"
-                class="flex-1 bg-gray-50 text-gray-700 text-xs font-medium py-1 px-2 rounded hover:bg-gray-100"
-              >
-                Historial
-              </button>
+            <p class="text-sm text-gray-600 mb-2">
+              <strong>Usuario:</strong> {{ location.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar' }}
+            </p>
+            <div class="text-xs text-gray-500">
+              <p><strong>Lat:</strong> {{ location.latitud.toFixed(6) }}</p>
+              <p><strong>Lng:</strong> {{ location.longitud.toFixed(6) }}</p>
+              <p><strong>Última actualización:</strong> {{ formatDate(location.timestamp_gps) }}</p>
             </div>
           </div>
         </div>
@@ -118,247 +128,194 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { MapPinIcon, ArrowPathIcon, PlusIcon } from '@heroicons/vue/24/outline'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ArrowPathIcon, MapPinIcon } from '@heroicons/vue/24/outline'
+import L from 'leaflet'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { io } from 'socket.io-client'
+import io from 'socket.io-client'
 
-const loading = ref(false)
+
+const map = ref(null)
+const socket = ref(null)
+const autoRefresh = ref(true)
+const showRoutes = ref(false)
+const selectedUser = ref('')
+const selectedVehicle = ref('')
+
+const locations = ref([])
+const users = ref([])
 const vehicles = ref([])
-let map = null
-let markers = {}
-let socket = null
+const markers = ref(new Map())
+//const routes = ref(new Map())
 
-// Coordenadas de Guadalajara, Jalisco
-const GUADALAJARA_CENTER = {
-  lat: 20.6597,
-  lng: -103.3496
-}
-
-const initializeMap = () => {
-  // Crear el mapa centrado en Guadalajara
-  map = new window.google.maps.Map(document.getElementById('map'), {
-    zoom: 12,
-    center: GUADALAJARA_CENTER,
-    mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-  })
-
-  // Agregar marcador del centro de Guadalajara
-  new window.google.maps.Marker({
-    position: GUADALAJARA_CENTER,
-    map: map,
-    title: 'Guadalajara, Jalisco',
-    icon: {
-      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#10B981"/>
-          <circle cx="12" cy="9" r="2.5" fill="white"/>
-        </svg>
-      `),
-      scaledSize: new window.google.maps.Size(24, 24),
-    },
-  })
-}
-
-const loadGoogleMaps = () => {
-  return new Promise((resolve) => {
-    if (window.google && window.google.maps) {
-      resolve()
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dO_BcqbJVQrxhg&libraries=places`
-    script.async = true
-    script.defer = true
-    script.onload = resolve
-    document.head.appendChild(script)
-  })
-}
-
-const fetchVehicleLocations = async () => {
-  try {
-    loading.value = true
-    const response = await api.get('/gps/latest')
+const filteredLocations = computed(() => {
+  return locations.value.filter(location => {
+    const matchesUser = !selectedUser.value || 
+      location.vehiculo?.assignment_actual?.usuario_id == selectedUser.value
     
-    if (response.data.success) {
-      vehicles.value = response.data.data.map(location => ({
-        id: location.vehicle.id,
-        licensePlate: location.vehicle.licensePlate,
-        model: location.vehicle.model,
-        brand: location.vehicle.brand,
-        status: location.vehicle.status,
-        lastLocation: location
-      }))
-      
-      updateMapMarkers()
-    }
+    const matchesVehicle = !selectedVehicle.value || 
+      location.vehiculo_id == selectedVehicle.value
+    
+    return matchesUser && matchesVehicle
+  })
+})
+
+const initMap = () => {
+  map.value = L.map('map').setView([19.432608, -99.133209], 10)
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map.value)
+}
+
+const initSocket = () => {
+  socket.value = io(import.meta.env.VITE_API_URL || 'http://localhost:8080')
+  
+  socket.value.on('location-update', (data) => {
+    updateVehicleLocation(data)
+  })
+  
+  socket.value.on('connect', () => {
+    console.log('Conectado al servidor de ubicaciones')
+  })
+  
+  socket.value.on('disconnect', () => {
+    console.log('Desconectado del servidor de ubicaciones')
+  })
+}
+
+const fetchData = async () => {
+  try {
+    const [locationsRes, usersRes, vehiclesRes] = await Promise.all([
+      api.get('/gps/latest'),
+      api.get('/users?rol=usuario&activo=true'),
+      api.get('/vehicle?estado=asignado')
+    ])
+    
+    locations.value = locationsRes.data.data
+    users.value = usersRes.data.data
+    vehicles.value = vehiclesRes.data.data
+    
+    updateMapMarkers()
   } catch (error) {
-    console.error('Error fetching vehicle locations:', error)
-    toast.error('Error al cargar las ubicaciones de vehículos')
-  } finally {
-    loading.value = false
+    toast.error('Error al cargar las ubicaciones')
   }
 }
 
 const updateMapMarkers = () => {
-  if (!map) return
-
   // Limpiar marcadores existentes
-  Object.values(markers).forEach(marker => marker.setMap(null))
-  markers = {}
+  markers.value.forEach(marker => {
+    map.value.removeLayer(marker)
+  })
+  markers.value.clear()
 
   // Agregar nuevos marcadores
-  vehicles.value.forEach(vehicle => {
-    if (vehicle.lastLocation) {
-      const marker = new window.google.maps.Marker({
-        position: {
-          lat: vehicle.lastLocation.latitude,
-          lng: vehicle.lastLocation.longitude
-        },
-        map: map,
-        title: `${vehicle.licensePlate} - ${vehicle.brand} ${vehicle.model}`,
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 2C11.58 2 8 5.58 8 10c0 7 8 18 8 18s8-11 8-18c0-4.42-3.58-8-8-8z" fill="#3B82F6"/>
-              <circle cx="16" cy="10" r="3" fill="white"/>
-            </svg>
-          `),
-          scaledSize: new window.google.maps.Size(32, 32),
-        },
-      })
-
-      // Info window
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: `
-          <div class="p-2">
-            <h3 class="font-bold">${vehicle.licensePlate}</h3>
-            <p class="text-sm">${vehicle.brand} ${vehicle.model}</p>
-            <p class="text-xs text-gray-600">
-              Última actualización: ${formatDate(vehicle.lastLocation.gpsTimestamp)}
-            </p>
-            ${vehicle.lastLocation.speed ? `<p class="text-xs">Velocidad: ${Math.round(vehicle.lastLocation.speed)} km/h</p>` : ''}
-          </div>
-        `
-      })
-
-      marker.addListener('click', () => {
-        infoWindow.open(map, marker)
-      })
-
-      markers[vehicle.id] = marker
-    }
+  filteredLocations.value.forEach(location => {
+    const marker = L.marker([location.latitud, location.longitud])
+      .bindPopup(`
+        <div class="p-2">
+          <h3 class="font-bold">${location.vehiculo?.matricula}</h3>
+          <p>${location.vehiculo?.marca?.nombre} ${location.vehiculo?.modelo}</p>
+          <p><strong>Usuario:</strong> ${location.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar'}</p>
+          <p><strong>Velocidad:</strong> ${location.velocidad} km/h</p>
+          <p><strong>Dirección:</strong> ${location.direccion}°</p>
+          <p><strong>Actualizado:</strong> ${formatDate(location.timestamp_gps)}</p>
+        </div>
+      `)
+      .addTo(map.value)
+    
+    markers.value.set(location.vehiculo_id, marker)
   })
 }
 
-const centerMapOnVehicle = (vehicle) => {
-  if (map && vehicle.lastLocation) {
-    map.setCenter({
-      lat: vehicle.lastLocation.latitude,
-      lng: vehicle.lastLocation.longitude
-    })
-    map.setZoom(15)
-    
-    // Abrir info window del marcador
-    if (markers[vehicle.id]) {
-      window.google.maps.event.trigger(markers[vehicle.id], 'click')
-    }
+const updateVehicleLocation = (locationData) => {
+  // Actualizar en la lista de ubicaciones
+  const index = locations.value.findIndex(loc => loc.vehiculo_id === locationData.vehiculo_id)
+  if (index !== -1) {
+    locations.value[index] = locationData
+  } else {
+    locations.value.push(locationData)
+  }
+  
+  // Actualizar marcador en el mapa
+  const marker = markers.value.get(locationData.vehiculo_id)
+  if (marker) {
+    marker.setLatLng([locationData.latitud, locationData.longitud])
+    marker.getPopup().setContent(`
+      <div class="p-2">
+        <h3 class="font-bold">${locationData.vehiculo?.matricula}</h3>
+        <p>${locationData.vehiculo?.marca?.nombre} ${locationData.vehiculo?.modelo}</p>
+        <p><strong>Usuario:</strong> ${locationData.vehiculo?.assignment_actual?.usuario_nombre || 'Sin asignar'}</p>
+        <p><strong>Velocidad:</strong> ${locationData.velocidad} km/h</p>
+        <p><strong>Dirección:</strong> ${locationData.direccion}°</p>
+        <p><strong>Actualizado:</strong> ${formatDate(locationData.timestamp_gps)}</p>
+      </div>
+    `)
   }
 }
 
-const viewVehicleHistory = (vehicleId) => {
-  // Implementar navegación al historial del vehículo
-  toast.info('Función de historial en desarrollo')
+const refreshLocations = async () => {
+  await fetchData()
+  toast.success('Ubicaciones actualizadas')
 }
 
-const generateMockData = async () => {
-  try {
-    loading.value = true
-    const response = await api.post('/gps/mock')
-    
-    if (response.data.success) {
-      toast.success(response.data.message)
-      await fetchVehicleLocations()
-    }
-  } catch (error) {
-    console.error('Error generating mock data:', error)
-    toast.error('Error al generar datos de prueba')
-  } finally {
-    loading.value = false
+const toggleAutoRefresh = () => {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    toast.success('Auto-actualización activada')
+  } else {
+    toast.info('Auto-actualización desactivada')
   }
 }
 
-const refreshLocations = () => {
-  fetchVehicleLocations()
+const filterVehicles = () => {
+  updateMapMarkers()
 }
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'active':
-      return 'bg-green-100 text-green-800'
-    case 'inactive':
-      return 'bg-red-100 text-red-800'
-    case 'maintenance':
-      return 'bg-yellow-100 text-yellow-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
+const focusVehicle = (location) => {
+  map.value.setView([location.latitud, location.longitud], 15)
+  const marker = markers.value.get(location.vehiculo_id)
+  if (marker) {
+    marker.openPopup()
   }
 }
 
-const getStatusText = (status) => {
-  switch (status) {
-    case 'active':
-      return 'Activo'
-    case 'inactive':
-      return 'Inactivo'
-    case 'maintenance':
-      return 'Mantenimiento'
-    default:
-      return 'Desconocido'
+const centerMap = () => {
+  if (filteredLocations.value.length > 0) {
+    const group = new L.featureGroup(Array.from(markers.value.values()))
+    map.value.fitBounds(group.getBounds().pad(0.1))
+  } else {
+    map.value.setView([19.432608, -99.133209], 10)
   }
+}
+
+const getSpeedClass = (speed) => {
+  if (speed === 0) return 'bg-gray-100 text-gray-800'
+  if (speed <= 30) return 'bg-green-100 text-green-800'
+  if (speed <= 60) return 'bg-yellow-100 text-yellow-800'
+  return 'bg-red-100 text-red-800'
 }
 
 const formatDate = (date) => {
-  if (!date) return 'No disponible'
-  return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es })
-}
-
-const initializeSocket = () => {
-  socket = io('http://localhost:8080')
-  
-  socket.on('connect', () => {
-    console.log('Conectado al servidor de Socket.IO')
-  })
-  
-  socket.on('location-update', (data) => {
-    console.log('Actualización de ubicación recibida:', data)
-    // Actualizar la ubicación del vehículo en tiempo real
-    const vehicleIndex = vehicles.value.findIndex(v => v.id === data.vehicleId)
-    if (vehicleIndex !== -1) {
-      vehicles.value[vehicleIndex].lastLocation = data.location
-      updateMapMarkers()
-    }
-  })
-  
-  socket.on('disconnect', () => {
-    console.log('Desconectado del servidor de Socket.IO')
-  })
+  return format(new Date(date), 'dd/MM/yyyy HH:mm:ss', { locale: es })
 }
 
 onMounted(async () => {
-  await loadGoogleMaps()
-  initializeMap()
-  await fetchVehicleLocations()
-  initializeSocket()
+  initMap()
+  initSocket()
+  await fetchData()
 })
 
 onUnmounted(() => {
-  if (socket) {
-    socket.disconnect()
+  if (socket.value) {
+    socket.value.disconnect()
   }
 })
 </script>
+
+<style>
+@import 'leaflet/dist/leaflet.css';
+</style>
