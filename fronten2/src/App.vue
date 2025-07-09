@@ -1,6 +1,5 @@
 <template>
   <router-view></router-view>
- <p>&copy; 2024 Sistema de Gestión Vehicular. Todos los derechos reservados.</p>
 </template>
 
 <script>
