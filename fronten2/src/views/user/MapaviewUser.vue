@@ -275,7 +275,7 @@ const centerMap = () => {
     const group = new L.featureGroup(Array.from(markers.value.values()))
     map.value.fitBounds(group.getBounds().pad(0.1))
   } else {
-    map.value.setView([19.432608, -99.133209], 10)
+    map.value.setView([20.6767, -103.3475], 10) // Guadalajara, Jalisco, 10)
   }
 }
 

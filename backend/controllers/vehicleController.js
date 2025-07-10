@@ -1,26 +1,65 @@
-import { Vehicle, User } from "../models/index.js"
+import { Vehicle, User, Assignment } from "../models/index.js"
+import pkg from "../config/config.cjs"
+const { logger } = pkg
+
+import { Op } from "sequelize"
 
 export const getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.findAll({
+    const { page = 1, limit = 10, search = "", status = "", brand = "" } = req.query
+    const offset = (page - 1) * limit
+
+    const whereClause = {}
+
+    if (search) {
+      whereClause[Op.or] = [
+        { licensePlate: { [Op.iLike]: `%${search}%` } },
+        { model: { [Op.iLike]: `%${search}%` } },
+        { brand: { [Op.iLike]: `%${search}%` } },
+      ]
+    }
+
+    if (status && status !== "") {
+      whereClause.status = status
+    }
+
+    if (brand && brand !== "") {
+      whereClause.brand = { [Op.iLike]: `%${brand}%` }
+    }
+
+    const { count, rows: vehicles } = await Vehicle.findAndCountAll({
+      where: whereClause,
       include: [
         {
           model: User,
           as: "assignedUser",
           attributes: ["id", "firstName", "lastName", "email"],
+          required: false,
         },
       ],
+      limit: Number.parseInt(limit),
+      offset: Number.parseInt(offset),
+      order: [["createdAt", "DESC"]],
     })
 
     res.json({
       success: true,
-      vehicles,
+      data: {
+        vehicles,
+        pagination: {
+          total: count,
+          page: Number.parseInt(page),
+          limit: Number.parseInt(limit),
+          totalPages: Math.ceil(count / limit),
+        },
+      },
     })
   } catch (error) {
-    console.error("Error al obtener vehículos:", error)
+    logger.error("Error en getAllVehicles:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -28,12 +67,26 @@ export const getAllVehicles = async (req, res) => {
 export const getVehicleById = async (req, res) => {
   try {
     const { id } = req.params
+
     const vehicle = await Vehicle.findByPk(id, {
       include: [
         {
           model: User,
           as: "assignedUser",
-          attributes: ["id", "firstName", "lastName", "email"],
+          attributes: ["id", "firstName", "lastName", "email", "phone"],
+        },
+        {
+          model: Assignment,
+          as: "assignments",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["id", "firstName", "lastName", "email"],
+            },
+          ],
+          order: [["createdAt", "DESC"]],
+          limit: 5,
         },
       ],
     })
@@ -47,32 +100,57 @@ export const getVehicleById = async (req, res) => {
 
     res.json({
       success: true,
-      vehicle,
+      data: vehicle,
     })
   } catch (error) {
-    console.error("Error al obtener vehículo:", error)
+    logger.error("Error en getVehicleById:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
 
 export const createVehicle = async (req, res) => {
   try {
-    const vehicleData = req.body
-    const vehicle = await Vehicle.create(vehicleData)
+    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber } = req.body
+
+    // Verificar que no exista un vehículo con la misma placa
+    const existingVehicle = await Vehicle.findOne({ where: { licensePlate } })
+    if (existingVehicle) {
+      return res.status(400).json({
+        success: false,
+        message: "Ya existe un vehículo con esta placa",
+      })
+    }
+
+    const vehicle = await Vehicle.create({
+      licensePlate,
+      model,
+      brand,
+      year,
+      type,
+      color,
+      mileage: mileage || 0,
+      engineNumber,
+      chassisNumber,
+      status: "available",
+    })
+
+    logger.info(`Vehículo creado: ${licensePlate}`)
 
     res.status(201).json({
       success: true,
-      message: "Vehículo creado exitosamente",
-      vehicle,
+      message: "Vehículo creado correctamente",
+      data: vehicle,
     })
   } catch (error) {
-    console.error("Error al crear vehículo:", error)
+    logger.error("Error en createVehicle:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -80,7 +158,7 @@ export const createVehicle = async (req, res) => {
 export const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params
-    const vehicleData = req.body
+    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, status } = req.body
 
     const vehicle = await Vehicle.findByPk(id)
     if (!vehicle) {
@@ -90,18 +168,45 @@ export const updateVehicle = async (req, res) => {
       })
     }
 
-    await vehicle.update(vehicleData)
+    // Verificar que no exista otro vehículo con la misma placa
+    if (licensePlate && licensePlate !== vehicle.licensePlate) {
+      const existingVehicle = await Vehicle.findOne({
+        where: { licensePlate, id: { [Op.ne]: id } },
+      })
+      if (existingVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: "Ya existe un vehículo con esta placa",
+        })
+      }
+    }
+
+    await vehicle.update({
+      licensePlate: licensePlate || vehicle.licensePlate,
+      model: model || vehicle.model,
+      brand: brand || vehicle.brand,
+      year: year || vehicle.year,
+      type: type || vehicle.type,
+      color: color || vehicle.color,
+      mileage: mileage !== undefined ? mileage : vehicle.mileage,
+      engineNumber: engineNumber || vehicle.engineNumber,
+      chassisNumber: chassisNumber || vehicle.chassisNumber,
+      status: status || vehicle.status,
+    })
+
+    logger.info(`Vehículo actualizado: ${vehicle.licensePlate}`)
 
     res.json({
       success: true,
-      message: "Vehículo actualizado exitosamente",
-      vehicle,
+      message: "Vehículo actualizado correctamente",
+      data: vehicle,
     })
   } catch (error) {
-    console.error("Error al actualizar vehículo:", error)
+    logger.error("Error en updateVehicle:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -118,17 +223,84 @@ export const deleteVehicle = async (req, res) => {
       })
     }
 
+    // Verificar que no tenga asignaciones activas
+    const activeAssignments = await Assignment.count({
+      where: { vehicleId: id, isActive: true },
+    })
+
+    if (activeAssignments > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No se puede eliminar un vehículo con asignaciones activas",
+      })
+    }
+
     await vehicle.destroy()
+
+    logger.info(`Vehículo eliminado: ${vehicle.licensePlate}`)
 
     res.json({
       success: true,
-      message: "Vehículo eliminado exitosamente",
+      message: "Vehículo eliminado correctamente",
     })
   } catch (error) {
-    console.error("Error al eliminar vehículo:", error)
+    logger.error("Error en deleteVehicle:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const getAvailableVehicles = async (req, res) => {
+  try {
+    const vehicles = await Vehicle.findAll({
+      where: { status: "available" },
+      attributes: ["id", "licensePlate", "model", "brand", "year"],
+      order: [["licensePlate", "ASC"]],
+    })
+
+    res.json({
+      success: true,
+      data: vehicles,
+    })
+  } catch (error) {
+    logger.error("Error en getAvailableVehicles:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const getVehicleStats = async (req, res) => {
+  try {
+    const totalVehicles = await Vehicle.count()
+    const availableVehicles = await Vehicle.count({ where: { status: "available" } })
+    const assignedVehicles = await Vehicle.count({ where: { status: "assigned" } })
+    const maintenanceVehicles = await Vehicle.count({ where: { status: "maintenance" } })
+    const outOfServiceVehicles = await Vehicle.count({ where: { status: "out_of_service" } })
+
+    const stats = {
+      total: totalVehicles,
+      available: availableVehicles,
+      assigned: assignedVehicles,
+      maintenance: maintenanceVehicles,
+      outOfService: outOfServiceVehicles,
+    }
+
+    res.json({
+      success: true,
+      data: stats,
+    })
+  } catch (error) {
+    logger.error("Error en getVehicleStats:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }

@@ -1,227 +1,326 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between">
-      <div class="min-w-0 flex-1">
-        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-          Gestión de Asignaciones
-        </h2>
-      </div>
-      <div class="mt-4 flex md:ml-4 md:mt-0">
-        <router-link
-          to="/asignaciones/crear"
-          class="ml-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-        >
-          <PlusIcon class="-ml-0.5 mr-1.5 h-5 w-5" />
-          Nueva Asignación
-        </router-link>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Usuario</label>
-          <input
-            v-model="filters.usuario"
-            type="text"
-            placeholder="Nombre del usuario..."
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Vehículo</label>
-          <input
-            v-model="filters.vehiculo"
-            type="text"
-            placeholder="Matrícula, modelo..."
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-          <select
-            v-model="filters.estado"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+  <div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md">
+      <!-- Header -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h1 class="text-2xl font-bold text-gray-900">Gestión de Asignaciones</h1>
+          <router-link
+            to="/admin/asignaciones/crear"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <option value="">Todos</option>
-            <option value="true">Activas</option>
-            <option value="false">Inactivas</option>
-          </select>
-        </div>
-        <div class="flex items-end">
-          <button
-            @click="resetFilters"
-            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Limpiar Filtros
-          </button>
+            Nueva Asignación
+          </router-link>
         </div>
       </div>
-    </div>
 
-    <!-- Assignments Table -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Usuario
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Vehículo
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha Asignación
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Estado
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Observaciones
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Acciones
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="assignment in filteredAssignments" :key="assignment.id">
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex items-center">
-                <div class="flex-shrink-0 h-10 w-10">
-                  <img
-                    class="h-10 w-10 rounded-full"
-                    :src="assignment.user?.photo || '/placeholder.svg?height=40&width=40'"
-                    :alt="assignment.user?.firstName"
-                  />
-                </div>
-                <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ assignment.user?.firstName }} {{ assignment.user?.lastName }}
+      <!-- Filtros -->
+      <div class="p-6 border-b border-gray-200 bg-gray-50">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="Buscar por usuario o vehículo..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              @input="debouncedSearch"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select
+              v-model="filters.status"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              @change="fetchAssignments"
+            >
+              <option value="">Todos</option>
+              <option value="active">Activas</option>
+              <option value="inactive">Inactivas</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button
+              @click="clearFilters"
+              class="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Limpiar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Usuario
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Vehículo
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fecha Asignación
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Estado
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-if="loading">
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                Cargando asignaciones...
+              </td>
+            </tr>
+            <tr v-else-if="assignments.length === 0">
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                No se encontraron asignaciones
+              </td>
+            </tr>
+            <tr v-else v-for="assignment in assignments" :key="assignment.id" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <img
+                      class="h-10 w-10 rounded-full object-cover"
+                      :src="assignment.user?.photo || '/placeholder.svg?height=40&width=40'"
+                      :alt="assignment.user?.firstName"
+                    />
                   </div>
-                  <div class="text-sm text-gray-500">{{ assignment.user?.email }}</div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ assignment.user?.firstName }} {{ assignment.user?.lastName }}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      {{ assignment.user?.email }}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-medium text-gray-900">{{ assignment.vehicle?.licensePlate }}</div>
-              <div class="text-sm text-gray-500">
-                {{ assignment.vehicle?.brand }} {{ assignment.vehicle?.model }}
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ formatDate(assignment.createdAt) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="assignment.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-              >
-                {{ assignment.isActive ? 'Activa' : 'Inactiva' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-              {{ assignment.notes || 'Sin observaciones' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-              <button
-                v-if="assignment.isActive"
-                @click="unassignVehicle(assignment)"
-                class="text-red-600 hover:text-red-900"
-              >
-                Desasignar
-              </button>
-              <button
-                @click="editAssignment(assignment)"
-                class="text-blue-600 hover:text-blue-900"
-              >
-                Editar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900">
+                  {{ assignment.vehicle?.licensePlate }}
+                </div>
+                <div class="text-sm text-gray-500">
+                  {{ assignment.vehicle?.brand }} {{ assignment.vehicle?.model }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ formatDate(assignment.assignmentDate) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  :class="[
+                    'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
+                    assignment.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  ]"
+                >
+                  {{ assignment.isActive ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <button
+                  @click="viewAssignment(assignment)"
+                  class="text-blue-600 hover:text-blue-900"
+                >
+                  Ver
+                </button>
+                <button
+                  v-if="assignment.isActive"
+                  @click="deactivateAssignment(assignment)"
+                  class="text-yellow-600 hover:text-yellow-900"
+                >
+                  Desactivar
+                </button>
+                <button
+                  @click="deleteAssignment(assignment)"
+                  class="text-red-600 hover:text-red-900"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div v-if="pagination.totalPages > 1" class="px-6 py-4 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-700">
+            Mostrando {{ (pagination.page - 1) * pagination.limit + 1 }} a 
+            {{ Math.min(pagination.page * pagination.limit, pagination.total) }} 
+            de {{ pagination.total }} resultados
+          </div>
+          <div class="flex space-x-2">
+            <button
+              @click="changePage(pagination.page - 1)"
+              :disabled="pagination.page <= 1"
+              class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              @click="changePage(page)"
+              :class="[
+                'px-3 py-1 text-sm border rounded',
+                page === pagination.page
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >
+              {{ page }}
+            </button>
+            <button
+              @click="changePage(pagination.page + 1)"
+              :disabled="pagination.page >= pagination.totalPages"
+              class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { PlusIcon } from '@heroicons/vue/24/outline'
-import api from '../../services/api'
+import { ref, computed, onMounted } from 'vue'
+import { useAssignmentsStore } from '@/stores/assignments'
 import { toast } from 'vue3-toastify'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 
-const assignments = ref([])
+const assignmentsStore = useAssignmentsStore()
+
 const loading = ref(false)
+const assignments = ref([])
+const pagination = ref({
+  total: 0,
+  page: 1,
+  limit: 10,
+  totalPages: 0
+})
 
 const filters = ref({
-  usuario: '',
-  vehiculo: '',
-  estado: ''
+  search: '',
+  status: ''
 })
 
-const filteredAssignments = computed(() => {
-  return assignments.value.filter(assignment => {
-    const matchesUsuario = !filters.value.usuario || 
-      `${assignment.user?.firstName} ${assignment.user?.lastName}`.toLowerCase().includes(filters.value.usuario.toLowerCase())
-    
-    const matchesVehiculo = !filters.value.vehiculo || 
-      assignment.vehicle?.licensePlate.toLowerCase().includes(filters.value.vehiculo.toLowerCase()) ||
-      assignment.vehicle?.model.toLowerCase().includes(filters.value.vehiculo.toLowerCase())
-    
-    const matchesEstado = filters.value.estado === '' || 
-      assignment.isActive.toString() === filters.value.estado
-    
-    return matchesUsuario && matchesVehiculo && matchesEstado
-  })
+let searchTimeout = null
+
+const visiblePages = computed(() => {
+  const pages = []
+  const start = Math.max(1, pagination.value.page - 2)
+  const end = Math.min(pagination.value.totalPages, pagination.value.page + 2)
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  
+  return pages
 })
 
-const fetchData = async () => {
+const debouncedSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchAssignments()
+  }, 500)
+}
+
+const fetchAssignments = async () => {
   try {
     loading.value = true
-    const response = await api.get('/assignments')
-    assignments.value = response.data.data || []
+    
+    const params = {
+      page: pagination.value.page,
+      limit: pagination.value.limit,
+      search: filters.value.search,
+      status: filters.value.status
+    }
+
+    const response = await assignmentsStore.fetchAssignments(params)
+    
+    if (response?.success) {
+      assignments.value = response.data.assignments || []
+      pagination.value = response.data.pagination || pagination.value
+    }
   } catch (error) {
-    console.error('Error al cargar los datos:', error)
-    toast.error('Error al cargar los datos')
+    console.error('Error fetching assignments:', error)
+    toast.error('Error al cargar las asignaciones')
   } finally {
     loading.value = false
   }
 }
 
-const unassignVehicle = async (assignment) => {
-  if (confirm(`¿Estás seguro de desasignar el vehículo ${assignment.vehicle?.licensePlate}?`)) {
+const changePage = (page) => {
+  if (page >= 1 && page <= pagination.value.totalPages) {
+    pagination.value.page = page
+    fetchAssignments()
+  }
+}
+
+const clearFilters = () => {
+  filters.value = {
+    search: '',
+    status: ''
+  }
+  pagination.value.page = 1
+  fetchAssignments()
+}
+
+const viewAssignment = (assignment) => {
+  // Implementar vista de detalle
+  console.log('Ver asignación:', assignment)
+}
+
+const deactivateAssignment = async (assignment) => {
+  if (confirm('¿Estás seguro de que deseas desactivar esta asignación?')) {
     try {
-      await api.patch(`/assignments/${assignment.id}/unassign`)
-      toast.success('Vehículo desasignado correctamente')
-      await fetchData()
+      const result = await assignmentsStore.deactivateAssignment(assignment.id)
+      if (result?.success) {
+        await fetchAssignments()
+      }
     } catch (error) {
-      toast.error('Error al desasignar el vehículo')
+      console.error('Error deactivating assignment:', error)
     }
   }
 }
 
-const editAssignment = (assignment) => {
-  console.log('Editar asignación:', assignment)
-}
-
-const resetFilters = () => {
-  filters.value = {
-    usuario: '',
-    vehiculo: '',
-    estado: ''
+const deleteAssignment = async (assignment) => {
+  if (confirm('¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.')) {
+    try {
+      const result = await assignmentsStore.deleteAssignment(assignment.id)
+      if (result?.success) {
+        await fetchAssignments()
+      }
+    } catch (error) {
+      console.error('Error deleting assignment:', error)
+    }
   }
 }
 
-const formatDate = (date) => {
-  return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es })
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
-  fetchData()
+  fetchAssignments()
 })
 </script>

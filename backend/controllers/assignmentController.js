@@ -2,17 +2,18 @@ import { Assignment, User, Vehicle } from "../models/index.js"
 import pkg from "../config/config.cjs"
 const { logger } = pkg
 
+import { Op } from "sequelize"
 
 export const getAllAssignments = async (req, res) => {
   try {
-    const { userId, vehicleId, isActive, page = 1, limit = 10 } = req.query
+    const { page = 1, limit = 10, search = "", status = "" } = req.query
+    const offset = (page - 1) * limit
 
     const whereClause = {}
-    if (userId) whereClause.userId = userId
-    if (vehicleId) whereClause.vehicleId = vehicleId
-    if (isActive !== undefined) whereClause.isActive = isActive === "true"
 
-    const offset = (page - 1) * limit
+    if (status && status !== "") {
+      whereClause.isActive = status === "active"
+    }
 
     const { count, rows: assignments } = await Assignment.findAndCountAll({
       where: whereClause,
@@ -21,6 +22,16 @@ export const getAllAssignments = async (req, res) => {
           model: User,
           as: "user",
           attributes: ["id", "firstName", "lastName", "email"],
+          where: search
+            ? {
+                [Op.or]: [
+                  { firstName: { [Op.iLike]: `%${search}%` } },
+                  { lastName: { [Op.iLike]: `%${search}%` } },
+                  { email: { [Op.iLike]: `%${search}%` } },
+                ],
+              }
+            : undefined,
+          required: search ? true : false,
         },
         {
           model: Vehicle,
@@ -35,12 +46,14 @@ export const getAllAssignments = async (req, res) => {
 
     res.json({
       success: true,
-      data: assignments,
-      pagination: {
-        total: count,
-        page: Number.parseInt(page),
-        limit: Number.parseInt(limit),
-        totalPages: Math.ceil(count / limit),
+      data: {
+        assignments,
+        pagination: {
+          total: count,
+          page: Number.parseInt(page),
+          limit: Number.parseInt(limit),
+          totalPages: Math.ceil(count / limit),
+        },
       },
     })
   } catch (error) {
@@ -48,6 +61,47 @@ export const getAllAssignments = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const getAssignmentById = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const assignment = await Assignment.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "email", "phone"],
+        },
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "licensePlate", "model", "brand", "year", "status"],
+        },
+      ],
+    })
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Asignación no encontrada",
+      })
+    }
+
+    res.json({
+      success: true,
+      data: assignment,
+    })
+  } catch (error) {
+    logger.error("Error en getAssignmentById:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -55,14 +109,6 @@ export const getAllAssignments = async (req, res) => {
 export const createAssignment = async (req, res) => {
   try {
     const { userId, vehicleId, notes } = req.body
-
-    // Verificar permisos
-    if (req.user.role !== "Admin") {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para crear asignaciones",
-      })
-    }
 
     // Verificar que el usuario existe
     const user = await User.findByPk(userId)
@@ -89,15 +135,15 @@ export const createAssignment = async (req, res) => {
       })
     }
 
-    // Verificar que no hay una asignación activa para este vehículo
-    const existingAssignment = await Assignment.findOne({
-      where: { vehicleId, isActive: true },
+    // Verificar que el usuario no tenga asignaciones activas
+    const activeAssignment = await Assignment.findOne({
+      where: { userId, isActive: true },
     })
 
-    if (existingAssignment) {
+    if (activeAssignment) {
       return res.status(400).json({
         success: false,
-        message: "El vehículo ya está asignado",
+        message: "El usuario ya tiene una asignación activa",
       })
     }
 
@@ -106,6 +152,7 @@ export const createAssignment = async (req, res) => {
       userId,
       vehicleId,
       notes,
+      assignmentDate: new Date(),
       isActive: true,
     })
 
@@ -115,51 +162,8 @@ export const createAssignment = async (req, res) => {
       assignedTo: userId,
     })
 
-    // Obtener la asignación completa
-    const fullAssignment = await Assignment.findByPk(assignment.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status"],
-        },
-      ],
-    })
-
-    logger.info(`Vehículo ${vehicle.licensePlate} asignado a ${user.firstName} ${user.lastName} por ${req.user.email}`)
-
-    res.status(201).json({
-      success: true,
-      message: "Asignación creada exitosamente",
-      data: fullAssignment,
-    })
-  } catch (error) {
-    logger.error("Error en createAssignment:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    })
-  }
-}
-
-export const unassignVehicle = async (req, res) => {
-  try {
-    const { id } = req.params
-
-    // Verificar permisos
-    if (req.user.role !== "Admin") {
-      return res.status(403).json({
-        success: false,
-        message: "No tienes permisos para desasignar vehículos",
-      })
-    }
-
-    const assignment = await Assignment.findByPk(id, {
+    // Obtener la asignación completa con relaciones
+    const newAssignment = await Assignment.findByPk(assignment.id, {
       include: [
         {
           model: User,
@@ -170,6 +174,83 @@ export const unassignVehicle = async (req, res) => {
           model: Vehicle,
           as: "vehicle",
           attributes: ["id", "licensePlate", "model", "brand"],
+        },
+      ],
+    })
+
+    logger.info(`Asignación creada: Usuario ${userId} - Vehículo ${vehicleId}`)
+
+    res.status(201).json({
+      success: true,
+      message: "Asignación creada correctamente",
+      data: newAssignment,
+    })
+  } catch (error) {
+    logger.error("Error en createAssignment:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const updateAssignment = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { notes } = req.body
+
+    const assignment = await Assignment.findByPk(id)
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Asignación no encontrada",
+      })
+    }
+
+    await assignment.update({ notes })
+
+    const updatedAssignment = await Assignment.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "licensePlate", "model", "brand"],
+        },
+      ],
+    })
+
+    logger.info(`Asignación actualizada: ${id}`)
+
+    res.json({
+      success: true,
+      message: "Asignación actualizada correctamente",
+      data: updatedAssignment,
+    })
+  } catch (error) {
+    logger.error("Error en updateAssignment:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const deactivateAssignment = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const assignment = await Assignment.findByPk(id, {
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
         },
       ],
     })
@@ -195,42 +276,90 @@ export const unassignVehicle = async (req, res) => {
     })
 
     // Actualizar el estado del vehículo
-    await Vehicle.update(
-      {
-        status: "available",
-        assignedTo: null,
-      },
-      { where: { id: assignment.vehicleId } },
-    )
+    await assignment.vehicle.update({
+      status: "available",
+      assignedTo: null,
+    })
 
-    logger.info(
-      `Vehículo ${assignment.vehicle.licensePlate} desasignado de ${assignment.user.firstName} ${assignment.user.lastName} por ${req.user.email}`,
-    )
+    logger.info(`Asignación desactivada: ${id}`)
 
     res.json({
       success: true,
-      message: "Vehículo desasignado exitosamente",
+      message: "Asignación desactivada correctamente",
     })
   } catch (error) {
-    logger.error("Error en unassignVehicle:", error)
+    logger.error("Error en deactivateAssignment:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const assignment = await Assignment.findByPk(id, {
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+        },
+      ],
+    })
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Asignación no encontrada",
+      })
+    }
+
+    // Si la asignación está activa, liberar el vehículo
+    if (assignment.isActive) {
+      await assignment.vehicle.update({
+        status: "available",
+        assignedTo: null,
+      })
+    }
+
+    await assignment.destroy()
+
+    logger.info(`Asignación eliminada: ${id}`)
+
+    res.json({
+      success: true,
+      message: "Asignación eliminada correctamente",
+    })
+  } catch (error) {
+    logger.error("Error en deleteAssignment:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
 
 export const getUserAssignments = async (req, res) => {
   try {
-    const userId = req.user.id
+    const { userId } = req.params
+    const { active = "" } = req.query
+
+    const whereClause = { userId }
+    if (active !== "") {
+      whereClause.isActive = active === "true"
+    }
 
     const assignments = await Assignment.findAll({
-      where: { userId },
+      where: whereClause,
       include: [
         {
           model: Vehicle,
           as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status", "image"],
+          attributes: ["id", "licensePlate", "model", "brand", "status"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -245,45 +374,37 @@ export const getUserAssignments = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
 
-export const getAssignmentById = async (req, res) => {
+export const getVehicleAssignments = async (req, res) => {
   try {
-    const { id } = req.params
+    const { vehicleId } = req.params
 
-    const assignment = await Assignment.findByPk(id, {
+    const assignments = await Assignment.findAll({
+      where: { vehicleId },
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
-        },
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "year", "color", "status"],
+          attributes: ["id", "firstName", "lastName", "email"],
         },
       ],
+      order: [["createdAt", "DESC"]],
     })
-
-    if (!assignment) {
-      return res.status(404).json({
-        success: false,
-        message: "Asignación no encontrada",
-      })
-    }
 
     res.json({
       success: true,
-      data: assignment,
+      data: assignments,
     })
   } catch (error) {
-    logger.error("Error en getAssignmentById:", error)
+    logger.error("Error en getVehicleAssignments:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }

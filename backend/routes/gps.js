@@ -1,28 +1,26 @@
 import express from "express"
 import {
-  getAllVehicleLocations,
-  getLatestVehicleLocation,
   createGpsLocation,
   getVehicleLocations,
+  getLatestVehicleLocation,
+  getAllVehicleLocations,
   getUserVehicleLocations,
+  deleteOldLocations,
   bulkCreateGpsLocations,
 } from "../controllers/gpsController.js"
-import { validateGpsLocation } from "../middleware/validation.js"
-import { authenticateToken } from "../middleware/auth.js"
+import { authenticateToken, requireRole } from "../middleware/auth.js"
 
 const router = express.Router()
-router.use(authenticateToken)
 
-// Rutas para usuarios normales
-router.get("/user/locations", getUserVehicleLocations)
+// Rutas públicas (requieren autenticación)
+router.get("/locations", authenticateToken, getAllVehicleLocations)
+router.get("/user/locations", authenticateToken, getUserVehicleLocations)
+router.get("/vehicle/:vehicleId", authenticateToken, getVehicleLocations)
+router.get("/vehicle/:vehicleId/latest", authenticateToken, getLatestVehicleLocation)
 
-// Rutas públicas para usuarios autenticados
-router.get("/", getAllVehicleLocations)
-router.get("/latest", getLatestVehicleLocation)
-router.get("/vehicles/:vehicleId/history", getVehicleLocations)
-
-// Rutas para crear ubicaciones (pueden ser usadas por dispositivos GPS)
-router.post("/", validateGpsLocation, createGpsLocation)
-router.post("/bulk", bulkCreateGpsLocations)
+// Rutas de administrador
+router.post("/locations", authenticateToken, requireRole("Admin"), createGpsLocation)
+router.post("/locations/bulk", authenticateToken, requireRole("Admin"), bulkCreateGpsLocations)
+router.delete("/cleanup", authenticateToken, requireRole("Admin"), deleteOldLocations)
 
 export default router

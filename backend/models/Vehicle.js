@@ -1,9 +1,8 @@
 import { DataTypes } from "sequelize"
-import sequelize from '../config/database.js' 
-
+import sequelize from "../config/database.js"
 
 const Vehicle = sequelize.define(
-  "Vehicles",
+  "Vehicle",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,16 +10,16 @@ const Vehicle = sequelize.define(
       autoIncrement: true,
     },
     licensePlate: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
     model: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     brand: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     year: {
@@ -28,46 +27,48 @@ const Vehicle = sequelize.define(
       allowNull: false,
     },
     type: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-    },
-    color: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-    },
-    mileage: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      defaultValue: 0,
-    },
-    engineNumber: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    chassisNumber: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    image: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     status: {
       type: DataTypes.ENUM("available", "assigned", "maintenance", "out_of_service"),
       allowNull: false,
       defaultValue: "available",
     },
-    assignedUserId: {
+    image: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    assignedTo: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "Users",
+        key: "id",
+      },
+    },
+    mileage: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    color: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    engineNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    chassisNumber: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
   },
   {
     tableName: "Vehicles",
-    timestamps: true,
     paranoid: true,
   },
 )
 
-export { Vehicle }
 export default Vehicle

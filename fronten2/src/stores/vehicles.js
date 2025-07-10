@@ -1,45 +1,90 @@
-"use client"
-
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
-import api from "../services/api"
-import { toast } from 'vue3-toastify'
-
+import { useAuthStore } from "./auth"
+import { toast } from "vue3-toastify"
 
 export const useVehiclesStore = defineStore("vehicles", () => {
   const vehicles = ref([])
+  const vehicleTypes = ref([])
   const loading = ref(false)
-  const selectedVehicle = ref(null)
+  const pagination = ref({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  })
 
-  const availableVehicles = computed(() => vehicles.value.filter((vehicle) => vehicle.status === "available"))
+  const authStore = useAuthStore()
 
-  const assignedVehicles = computed(() => vehicles.value.filter((vehicle) => vehicle.status === "assigned"))
+  // Computed
+  const availableVehicles = computed(() => vehicles.value.filter((vehicle) => vehicle.status === "Disponible"))
 
-  const fetchVehicles = async (filters = {}) => {
+  const assignedVehicles = computed(() => vehicles.value.filter((vehicle) => vehicle.status === "Asignado"))
+
+  const activeVehicles = computed(() => vehicles.value.filter((vehicle) => vehicle.isActive))
+
+  // Actions
+  const fetchVehicles = async (params = {}) => {
     try {
       loading.value = true
-      const params = new URLSearchParams(filters).toString()
-      const response = await api.get(`/vehiculos${params ? `?${params}` : ""}`)
-      vehicles.value = response.data.data
-      return { success: true, data: response.data.data }
+      const queryParams = new URLSearchParams({
+        page: params.page || pagination.value.page,
+        limit: params.limit || pagination.value.limit,
+        search: params.search || "",
+        status: params.status || "",
+        brand: params.brand || "",
+      }).toString()
+
+      const response = await authStore.apiCall(`/vehicles?${queryParams}`, "GET")
+
+      if (response.success) {
+        vehicles.value = response.data.vehicles
+        pagination.value = response.data.pagination
+      }
     } catch (error) {
       toast.error("Error al cargar los vehículos")
-      return { success: false, error }
+      console.error("Error fetching vehicles:", error)
     } finally {
       loading.value = false
+    }
+  }
+
+  const fetchVehicleTypes = async () => {
+    try {
+      const response = await authStore.apiCall("/vehicle-types", "GET")
+      if (response.success) {
+        vehicleTypes.value = response.data
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle types:", error)
+    }
+  }
+
+  const getVehicleById = async (id) => {
+    try {
+      const response = await authStore.apiCall(`/vehicles/${id}`, "GET")
+      return response.success ? response.data : null
+    } catch (error) {
+      toast.error("Error al cargar el vehículo")
+      console.error("Error fetching vehicle:", error)
+      return null
     }
   }
 
   const createVehicle = async (vehicleData) => {
     try {
       loading.value = true
-      const response = await api.post("/vehiculos", vehicleData)
-      vehicles.value.push(response.data.data)
-      toast.success("Vehículo creado correctamente")
-      return { success: true, data: response.data.data }
+      const response = await authStore.apiCall("/vehicles", "POST", vehicleData)
+
+      if (response.success) {
+        toast.success("Vehículo creado correctamente")
+        await fetchVehicles() // Refresh list
+        return { success: true, data: response.data }
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al crear el vehículo")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al crear el vehículo"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
@@ -48,16 +93,17 @@ export const useVehiclesStore = defineStore("vehicles", () => {
   const updateVehicle = async (id, vehicleData) => {
     try {
       loading.value = true
-      const response = await api.put(`/vehiculos/${id}`, vehicleData)
-      const index = vehicles.value.findIndex((v) => v.id === id)
-      if (index !== -1) {
-        vehicles.value[index] = response.data.data
+      const response = await authStore.apiCall(`/vehicles/${id}`, "PUT", vehicleData)
+
+      if (response.success) {
+        toast.success("Vehículo actualizado correctamente")
+        await fetchVehicles() // Refresh list
+        return { success: true, data: response.data }
       }
-      toast.success("Vehículo actualizado correctamente")
-      return { success: true, data: response.data.data }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al actualizar el vehículo")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al actualizar el vehículo"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
@@ -66,82 +112,97 @@ export const useVehiclesStore = defineStore("vehicles", () => {
   const deleteVehicle = async (id) => {
     try {
       loading.value = true
-      await api.delete(`/vehiculos/${id}`)
-      vehicles.value = vehicles.value.filter((v) => v.id !== id)
-      toast.success("Vehículo eliminado correctamente")
-      return { success: true }
+      const response = await authStore.apiCall(`/vehicles/${id}`, "DELETE")
+
+      if (response.success) {
+        toast.success("Vehículo eliminado correctamente")
+        await fetchVehicles() // Refresh list
+        return { success: true }
+      }
     } catch (error) {
-      toast.error("Error al eliminar el vehículo")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al eliminar el vehículo"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
   }
 
-  const assignVehicle = async (vehicleId, userId, notes = "") => {
+  const toggleVehicleStatus = async (id) => {
     try {
-      loading.value = true
-      const response = await api.post("/assignments", {
-        vehicleId,
-        userId,
-        notes,
+      const vehicle = vehicles.value.find((v) => v.id === id)
+      if (!vehicle) return { success: false, message: "Vehículo no encontrado" }
+
+      const newStatus = vehicle.status === "Disponible" ? "Mantenimiento" : "Disponible"
+      const response = await authStore.apiCall(`/vehicles/${id}`, "PUT", {
+        ...vehicle,
+        status: newStatus,
       })
 
-      // Actualizar el estado del vehículo
-      const vehicleIndex = vehicles.value.findIndex((v) => v.id === vehicleId)
-      if (vehicleIndex !== -1) {
-        vehicles.value[vehicleIndex].status = "assigned"
-        vehicles.value[vehicleIndex].assignedTo = userId
+      if (response.success) {
+        toast.success(`Vehículo marcado como ${newStatus}`)
+        await fetchVehicles() // Refresh list
+        return { success: true }
       }
-
-      toast.success("Vehículo asignado correctamente")
-      return { success: true, data: response.data.data }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al asignar el vehículo")
-      return { success: false, error }
-    } finally {
-      loading.value = false
+      const message = error.response?.data?.message || "Error al cambiar el estado del vehículo"
+      toast.error(message)
+      return { success: false, message }
     }
   }
 
-  const unassignVehicle = async (vehicleId) => {
+  const getAvailableVehicles = async () => {
     try {
-      loading.value = true
-      await api.patch(`/assignments/vehicle/${vehicleId}/unassign`)
-
-      // Actualizar el estado del vehículo
-      const vehicleIndex = vehicles.value.findIndex((v) => v.id === vehicleId)
-      if (vehicleIndex !== -1) {
-        vehicles.value[vehicleIndex].status = "available"
-        vehicles.value[vehicleIndex].assignedTo = null
-      }
-
-      toast.success("Vehículo desasignado correctamente")
-      return { success: true }
+      const response = await authStore.apiCall("/vehicles?status=Disponible", "GET")
+      return response.success ? response.data.vehicles : []
     } catch (error) {
-      toast.error("Error al desasignar el vehículo")
-      return { success: false, error }
-    } finally {
-      loading.value = false
+      console.error("Error fetching available vehicles:", error)
+      return []
     }
   }
 
-  const setSelectedVehicle = (vehicle) => {
-    selectedVehicle.value = vehicle
+  const searchVehicles = async (searchTerm) => {
+    try {
+      const response = await authStore.apiCall(`/vehicles?search=${searchTerm}`, "GET")
+      return response.success ? response.data.vehicles : []
+    } catch (error) {
+      console.error("Error searching vehicles:", error)
+      return []
+    }
+  }
+
+  const getVehicleStats = async () => {
+    try {
+      const response = await authStore.apiCall("/vehicles/stats", "GET")
+      return response.success ? response.data : {}
+    } catch (error) {
+      console.error("Error fetching vehicle stats:", error)
+      return {}
+    }
   }
 
   return {
+    // State
     vehicles,
+    vehicleTypes,
     loading,
-    selectedVehicle,
+    pagination,
+
+    // Computed
     availableVehicles,
     assignedVehicles,
+    activeVehicles,
+
+    // Actions
     fetchVehicles,
+    fetchVehicleTypes,
+    getVehicleById,
     createVehicle,
     updateVehicle,
     deleteVehicle,
-    assignVehicle,
-    unassignVehicle,
-    setSelectedVehicle,
+    toggleVehicleStatus,
+    getAvailableVehicles,
+    searchVehicles,
+    getVehicleStats,
   }
 })

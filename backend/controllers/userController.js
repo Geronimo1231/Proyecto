@@ -1,7 +1,6 @@
-import { User, Vehicle, Assignment, GpsLocation } from "../models/index.js"
+import { User, Assignment, Vehicle } from "../models/index.js"
 import pkg from "../config/config.cjs"
 const { logger } = pkg
-
 import { Op } from "sequelize"
 
 export const getAllUsers = async (req, res) => {
@@ -19,13 +18,12 @@ export const getAllUsers = async (req, res) => {
       ]
     }
 
-    if (role) {
+    if (role && role !== "") {
       whereClause.role = role
     }
 
     const { count, rows: users } = await User.findAndCountAll({
       where: whereClause,
-      attributes: { exclude: ["password"] },
       include: [
         {
           model: Assignment,
@@ -41,6 +39,7 @@ export const getAllUsers = async (req, res) => {
           ],
         },
       ],
+      attributes: { exclude: ["password"] },
       limit: Number.parseInt(limit),
       offset: Number.parseInt(offset),
       order: [["createdAt", "DESC"]],
@@ -63,6 +62,7 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -72,7 +72,6 @@ export const getUserById = async (req, res) => {
     const { id } = req.params
 
     const user = await User.findByPk(id, {
-      attributes: { exclude: ["password"] },
       include: [
         {
           model: Assignment,
@@ -84,8 +83,11 @@ export const getUserById = async (req, res) => {
               attributes: ["id", "licensePlate", "model", "brand", "status"],
             },
           ],
+          order: [["createdAt", "DESC"]],
+          limit: 5,
         },
       ],
+      attributes: { exclude: ["password"] },
     })
 
     if (!user) {
@@ -104,20 +106,21 @@ export const getUserById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
 
 export const createUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, role } = req.body
+    const { firstName, lastName, email, phone, password, role, photo } = req.body
 
-    // Check if user already exists
+    // Verificar que el email no esté en uso
     const existingUser = await User.findOne({ where: { email } })
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Ya existe un usuario con este email",
+        message: "El email ya está registrado",
       })
     }
 
@@ -125,16 +128,18 @@ export const createUser = async (req, res) => {
       firstName,
       lastName,
       email,
-      password,
       phone,
+      password,
       role: role || "User",
+      photo: photo || "/placeholder.svg?height=100&width=100",
+      isActive: true,
     })
 
-    const userResponse = await User.findByPk(user.id, {
-      attributes: { exclude: ["password"] },
-    })
+    // Remover password de la respuesta
+    const userResponse = user.toJSON()
+    delete userResponse.password
 
-    logger.info(`Usuario creado: ${user.email}`)
+    logger.info(`Usuario creado: ${email}`)
 
     res.status(201).json({
       success: true,
@@ -146,6 +151,7 @@ export const createUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -153,7 +159,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { firstName, lastName, phone, role } = req.body
+    const { firstName, lastName, email, phone, role, photo, isActive, password } = req.body
 
     const user = await User.findByPk(id)
     if (!user) {
@@ -163,29 +169,53 @@ export const updateUser = async (req, res) => {
       })
     }
 
-    await user.update({
-      firstName,
-      lastName,
-      phone,
-      role,
-    })
+    // Verificar que el email no esté en uso por otro usuario
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({
+        where: { email, id: { [Op.ne]: id } },
+      })
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "El email ya está registrado",
+        })
+      }
+    }
 
-    const updatedUser = await User.findByPk(id, {
-      attributes: { exclude: ["password"] },
-    })
+    const updateData = {
+      firstName: firstName || user.firstName,
+      lastName: lastName || user.lastName,
+      email: email || user.email,
+      phone: phone || user.phone,
+      role: role || user.role,
+      photo: photo || user.photo,
+      isActive: isActive !== undefined ? isActive : user.isActive,
+    }
+
+    // Solo actualizar password si se proporciona
+    if (password) {
+      updateData.password = password
+    }
+
+    await user.update(updateData)
+
+    // Remover password de la respuesta
+    const userResponse = user.toJSON()
+    delete userResponse.password
 
     logger.info(`Usuario actualizado: ${user.email}`)
 
     res.json({
       success: true,
       message: "Usuario actualizado correctamente",
-      data: updatedUser,
+      data: userResponse,
     })
   } catch (error) {
     logger.error("Error en updateUser:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -202,7 +232,7 @@ export const deleteUser = async (req, res) => {
       })
     }
 
-    // Check if user has active assignments
+    // Verificar que no tenga asignaciones activas
     const activeAssignments = await Assignment.count({
       where: { userId: id, isActive: true },
     })
@@ -227,50 +257,170 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const toggleUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const user = await User.findByPk(id)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado",
+      })
+    }
+
+    await user.update({
+      isActive: !user.isActive,
+    })
+
+    logger.info(`Estado de usuario cambiado: ${user.email} - ${user.isActive ? "Activo" : "Inactivo"}`)
+
+    res.json({
+      success: true,
+      message: `Usuario ${user.isActive ? "activado" : "desactivado"} correctamente`,
+      data: {
+        id: user.id,
+        isActive: user.isActive,
+      },
+    })
+  } catch (error) {
+    logger.error("Error en toggleUserStatus:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const getUsersByRole = async (req, res) => {
+  try {
+    const { role } = req.params
+
+    const users = await User.findAll({
+      where: { role, isActive: true },
+      attributes: ["id", "firstName", "lastName", "email"],
+      order: [["firstName", "ASC"]],
+    })
+
+    res.json({
+      success: true,
+      data: users,
+    })
+  } catch (error) {
+    logger.error("Error en getUsersByRole:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const updateUserPhoto = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { photo } = req.body
+
+    const user = await User.findByPk(id)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado",
+      })
+    }
+
+    await user.update({ photo })
+
+    logger.info(`Foto de usuario actualizada: ${user.email}`)
+
+    res.json({
+      success: true,
+      message: "Foto actualizada correctamente",
+      data: {
+        id: user.id,
+        photo: user.photo,
+      },
+    })
+  } catch (error) {
+    logger.error("Error en updateUserPhoto:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const changePassword = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { currentPassword, newPassword } = req.body
+
+    const user = await User.findByPk(id)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado",
+      })
+    }
+
+    // Verificar password actual
+    const isValidPassword = await user.comparePassword(currentPassword)
+    if (!isValidPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password actual incorrecto",
+      })
+    }
+
+    await user.update({ password: newPassword })
+
+    logger.info(`Password cambiado para usuario: ${user.email}`)
+
+    res.json({
+      success: true,
+      message: "Password actualizado correctamente",
+    })
+  } catch (error) {
+    logger.error("Error en changePassword:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
 
 export const getUserStats = async (req, res) => {
   try {
-    const userId = req.user.id
-
-    // Get user assignments
-    const assignments = await Assignment.findAll({
-      where: { userId },
+    const totalUsers = await User.count()
+    const activeUsers = await User.count({ where: { isActive: true } })
+    const adminUsers = await User.count({ where: { role: "Admin" } })
+    const regularUsers = await User.count({ where: { role: "User" } })
+    const usersWithAssignments = await User.count({
       include: [
         {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status"],
+          model: Assignment,
+          as: "assignments",
+          where: { isActive: true },
+          required: true,
         },
       ],
     })
 
-    const totalAssignments = assignments.length
-    const activeAssignments = assignments.filter((a) => a.isActive).length
-    const assignedVehicles = activeAssignments
-
-    // Get recent GPS locations for user's vehicles
-    const vehicleIds = assignments.filter((a) => a.isActive).map((a) => a.vehicleId)
-
-    let recentLocations = 0
-    if (vehicleIds.length > 0) {
-      recentLocations = await GpsLocation.count({
-        where: {
-          vehicleId: { [Op.in]: vehicleIds },
-          gpsTimestamp: {
-            [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-          },
-        },
-      })
-    }
-
     const stats = {
-      assignedVehicles,
-      totalAssignments,
-      activeAssignments,
-      recentLocations,
+      total: totalUsers,
+      active: activeUsers,
+      inactive: totalUsers - activeUsers,
+      admins: adminUsers,
+      users: regularUsers,
+      withAssignments: usersWithAssignments,
     }
 
     res.json({
@@ -282,83 +432,7 @@ export const getUserStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
-    })
-  }
-}
-
-export const getUserVehicles = async (req, res) => {
-  try {
-    const userId = req.user.id
-
-    const assignments = await Assignment.findAll({
-      where: { userId, isActive: true },
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand", "status", "year"],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-    })
-
-    const vehicles = assignments.map((assignment) => ({
-      ...assignment.vehicle.toJSON(),
-      assignmentId: assignment.id,
-      assignedAt: assignment.createdAt,
-    }))
-
-    res.json({
-      success: true,
-      data: vehicles,
-    })
-  } catch (error) {
-    logger.error("Error en getUserVehicles:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    })
-  }
-}
-
-export const getUserActivity = async (req, res) => {
-  try {
-    const userId = req.user.id
-    const { limit = 10 } = req.query
-
-    // Get recent assignments
-    const recentAssignments = await Assignment.findAll({
-      where: { userId },
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand"],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-      limit: Number.parseInt(limit),
-    })
-
-    // Format activity data
-    const activity = recentAssignments.map((assignment) => ({
-      id: assignment.id,
-      type: "assignment",
-      description: `Vehículo ${assignment.vehicle.licensePlate} ${assignment.isActive ? "asignado" : "desasignado"}`,
-      vehicle: assignment.vehicle,
-      createdAt: assignment.createdAt,
-      isActive: assignment.isActive,
-    }))
-
-    res.json({
-      success: true,
-      data: activity,
-    })
-  } catch (error) {
-    logger.error("Error en getUserActivity:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }

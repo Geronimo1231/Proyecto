@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize"
-import sequelize from '../config/database.js' 
-
+import sequelize from "../config/database.js"
 
 const GpsLocation = sequelize.define(
   "GpsLocation",
@@ -13,6 +12,10 @@ const GpsLocation = sequelize.define(
     vehicleId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "Vehicles",
+        key: "id",
+      },
     },
     latitude: {
       type: DataTypes.DECIMAL(10, 8),
@@ -24,11 +27,13 @@ const GpsLocation = sequelize.define(
     },
     speed: {
       type: DataTypes.DECIMAL(5, 2),
-      allowNull: true,
+      allowNull: false,
+      defaultValue: 0,
     },
     direction: {
       type: DataTypes.DECIMAL(5, 2),
-      allowNull: true,
+      allowNull: false,
+      defaultValue: 0,
     },
     gpsTimestamp: {
       type: DataTypes.DATE,
@@ -37,10 +42,9 @@ const GpsLocation = sequelize.define(
     },
   },
   {
-    tableName: "Gpslocations",
+    tableName: "GpsLocations",
     timestamps: true,
   },
 )
 
-export { GpsLocation }
 export default GpsLocation

@@ -1,50 +1,77 @@
-"use client"
-
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
-import api from "../services/api"
-import { toast } from 'vue3-toastify'
-//import { useUsersStore } from '@/stores/users' 
+import { useAuthStore } from "./auth"
+import { toast } from "vue3-toastify"
 
-const usersStore = useUsersStore()
-console.log(usersStore.users)
-
-const useUsersStore = defineStore("users", () => {
+export const useUsersStore = defineStore("users", () => {
   const users = ref([])
   const loading = ref(false)
-  const selectedUser = ref(null)
+  const pagination = ref({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  })
 
-  const activeUsers = computed(() => users.value.filter((user) => !user.deletedAt))
+  const authStore = useAuthStore()
 
-  const adminUsers = computed(() => users.value.filter((user) => ["GlobalAdmin", "Admin"].includes(user.role)))
+  // Computed
+  const adminUsers = computed(() => users.value.filter((user) => user.role === "Admin"))
 
   const regularUsers = computed(() => users.value.filter((user) => user.role === "User"))
 
-  const fetchUsers = async (filters = {}) => {
+  const activeUsers = computed(() => users.value.filter((user) => user.isActive))
+
+  // Actions
+  const fetchUsers = async (params = {}) => {
     try {
       loading.value = true
-      const params = new URLSearchParams(filters).toString()
-      const response = await api.get(`/users${params ? `?${params}` : ""}`)
-      users.value = response.data.data
-      return { success: true, data: response.data.data }
+      const queryParams = new URLSearchParams({
+        page: params.page || pagination.value.page,
+        limit: params.limit || pagination.value.limit,
+        search: params.search || "",
+        role: params.role || "",
+      }).toString()
+
+      const response = await authStore.apiCall(`/users?${queryParams}`, "GET")
+
+      if (response.success) {
+        users.value = response.data.users
+        pagination.value = response.data.pagination
+      }
     } catch (error) {
       toast.error("Error al cargar los usuarios")
-      return { success: false, error }
+      console.error("Error fetching users:", error)
     } finally {
       loading.value = false
+    }
+  }
+
+  const getUserById = async (id) => {
+    try {
+      const response = await authStore.apiCall(`/users/${id}`, "GET")
+      return response.success ? response.data : null
+    } catch (error) {
+      toast.error("Error al cargar el usuario")
+      console.error("Error fetching user:", error)
+      return null
     }
   }
 
   const createUser = async (userData) => {
     try {
       loading.value = true
-      const response = await api.post("/users", userData)
-      users.value.push(response.data.data)
-      toast.success("Usuario creado correctamente")
-      return { success: true, data: response.data.data }
+      const response = await authStore.apiCall("/users", "POST", userData)
+
+      if (response.success) {
+        toast.success("Usuario creado correctamente")
+        await fetchUsers() // Refresh list
+        return { success: true, data: response.data }
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al crear el usuario")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al crear el usuario"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
@@ -53,16 +80,17 @@ const useUsersStore = defineStore("users", () => {
   const updateUser = async (id, userData) => {
     try {
       loading.value = true
-      const response = await api.put(`/users/${id}`, userData)
-      const index = users.value.findIndex((u) => u.id === id)
-      if (index !== -1) {
-        users.value[index] = response.data.data
+      const response = await authStore.apiCall(`/users/${id}`, "PUT", userData)
+
+      if (response.success) {
+        toast.success("Usuario actualizado correctamente")
+        await fetchUsers() // Refresh list
+        return { success: true, data: response.data }
       }
-      toast.success("Usuario actualizado correctamente")
-      return { success: true, data: response.data.data }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al actualizar el usuario")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al actualizar el usuario"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
@@ -71,13 +99,17 @@ const useUsersStore = defineStore("users", () => {
   const deleteUser = async (id) => {
     try {
       loading.value = true
-      await api.delete(`/users/${id}`)
-      users.value = users.value.filter((u) => u.id !== id)
-      toast.success("Usuario eliminado correctamente")
-      return { success: true }
+      const response = await authStore.apiCall(`/users/${id}`, "DELETE")
+
+      if (response.success) {
+        toast.success("Usuario eliminado correctamente")
+        await fetchUsers() // Refresh list
+        return { success: true }
+      }
     } catch (error) {
-      toast.error("Error al eliminar el usuario")
-      return { success: false, error }
+      const message = error.response?.data?.message || "Error al eliminar el usuario"
+      toast.error(message)
+      return { success: false, message }
     } finally {
       loading.value = false
     }
@@ -85,38 +117,66 @@ const useUsersStore = defineStore("users", () => {
 
   const toggleUserStatus = async (id) => {
     try {
-      loading.value = true
-      const response = await api.patch(`/users/${id}/toggle-status`)
-      const index = users.value.findIndex((u) => u.id === id)
-      if (index !== -1) {
-        users.value[index] = response.data.data
+      const user = users.value.find((u) => u.id === id)
+      if (!user) return { success: false, message: "Usuario no encontrado" }
+
+      const response = await authStore.apiCall(`/users/${id}`, "PUT", {
+        ...user,
+        isActive: !user.isActive,
+      })
+
+      if (response.success) {
+        toast.success(`Usuario ${user.isActive ? "desactivado" : "activado"} correctamente`)
+        await fetchUsers() // Refresh list
+        return { success: true }
       }
-      toast.success("Estado del usuario actualizado")
-      return { success: true, data: response.data.data }
     } catch (error) {
-      toast.error("Error al cambiar el estado del usuario")
-      return { success: false, error }
-    } finally {
-      loading.value = false
+      const message = error.response?.data?.message || "Error al cambiar el estado del usuario"
+      toast.error(message)
+      return { success: false, message }
     }
   }
 
-  const setSelectedUser = (user) => {
-    selectedUser.value = user
+  const getUsersByRole = async (role) => {
+    try {
+      const response = await authStore.apiCall(`/users?role=${role}`, "GET")
+      return response.success ? response.data.users : []
+    } catch (error) {
+      toast.error("Error al cargar los usuarios por rol")
+      console.error("Error fetching users by role:", error)
+      return []
+    }
+  }
+
+  const searchUsers = async (searchTerm) => {
+    try {
+      const response = await authStore.apiCall(`/users?search=${searchTerm}`, "GET")
+      return response.success ? response.data.users : []
+    } catch (error) {
+      console.error("Error searching users:", error)
+      return []
+    }
   }
 
   return {
+    // State
     users,
     loading,
-    selectedUser,
-    activeUsers,
+    pagination,
+
+    // Computed
     adminUsers,
     regularUsers,
+    activeUsers,
+
+    // Actions
     fetchUsers,
+    getUserById,
     createUser,
     updateUser,
     deleteUser,
     toggleUserStatus,
-    setSelectedUser,
+    getUsersByRole,
+    searchUsers,
   }
 })

@@ -1,18 +1,18 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { useAuthStore } from "../stores/auth.js";
+import { createRouter, createWebHistory } from "vue-router"
+import { useAuthStore } from "../stores/auth.js"
 
 // Vistas globales
-import Home from "../views/HomeView.vue";
-import Login from "../views/LoginForm.vue";
+import Home from "../views/HomeView.vue"
+import Login from "../views/LoginForm.vue"
 
 // Vistas de administrador
-import AdminLayout from "../layouts/AdminLayout.vue";
-import AdminDashboard from "../views/admin/DashboardView.vue";
-import AdminAsignaciones from "../views/admin/AsignacionesView.vue";
-import AdminMapa from "../views/admin/MapaView.vue";
-import AdminRegistrar from "../views/admin/RegistrarView.vue";
-import AdminUsuarios from "../views/admin/UsuariosView.vue";
-import AdminVehiculos from "../views/admin/VehiculosView.vue";
+import AdminLayout from "../layouts/AdminLayout.vue"
+import AdminDashboard from "../views/admin/DashboardView.vue"
+import AdminAsignaciones from "../views/admin/AsignacionesView.vue"
+import AdminMapa from "../views/admin/MapaView.vue"
+import AdminRegistrar from "../views/admin/RegistrarView.vue"
+import AdminUsuarios from "../views/admin/UsuariosView.vue"
+import AdminVehiculos from "../views/admin/VehiculosView.vue"
 import UsuarioCrearView from "../views/admin/UsuarioCrearView.vue"
 import VehiculoCrearView from "../views/admin/VehiculoCrearView.vue"
 import VehiculoDetalleView from "../views/admin/VehiculoDetalleView.vue"
@@ -21,13 +21,17 @@ import AsignacionCrearView from "../views/admin/AsignacionCrearView.vue"
 import PerfilAdminView from "../views/admin/PerfilAdminView.vue"
 
 // Vistas de usuario
-import UserLayout from "../layouts/UserLayout.vue";
-import UserDashboard from "../views/user/DashboardUser.vue";
-import UserMapa from "../views/user/MapaviewUser.vue";
-import UserPerfil from "../views/user/PerfilView.vue";
-import UserVehiculos from "../views/user/VehiculoView.vue";
+import UserLayout from "../layouts/UserLayout.vue"
+import UserDashboard from "../views/user/DashboardUser.vue"
+import UserMapa from "../views/user/MapaviewUser.vue"
+import UserPerfil from "../views/user/PerfilView.vue"
+import UserVehiculos from "../views/user/VehiculoView.vue"
 
 const routes = [
+  {
+    path: "/",
+    redirect: "/login",
+  },
   {
     path: "/home",
     name: "Home",
@@ -40,173 +44,120 @@ const routes = [
     component: Login,
     meta: { requiresAuth: false },
   },
-    {
-    path: "/vehiculos",
-    name: "vehiculos",
-    component: AdminVehiculos,
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/vehiculos/crear",
-    name: "VehiculoCrear",
-    component: VehiculoCrearView,
-  },
-  {
-    path: "/vehiculos/:id",
-    name: "VehiculoDetalle",
-    component: VehiculoDetalleView,
-    props: true,
-  },
-  {
-    path: "/vehiculos/:id/editar",
-    name: "VehiculoEditar",
-    component: VehiculoEditarView,
-    props: true,
-  },
-   {
-    path: "/asignaciones",
-    name: "asignaciones",
-    component: AdminAsignaciones,
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/asignaciones/crear",
-    name: "AsignacionCrear",
-    component: AsignacionCrearView,
-  },
-  {
-    path: "/mapa",
-    name: "mapa",
-    component: AdminMapa,
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/registrar",
-    name: "registrar",
-    component: AdminRegistrar,
-    meta: { requiresAuth: false },
-  },
-   {
-    path: "/usuarios",
-    name: "usuarios",
-    component: AdminUsuarios,
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/usuarios/crear",
-    name: "UsuarioCrear",
-    component: UsuarioCrearView,
-  },
-    {
-    path: "/dashboarduser",
-    name: "dashboarduser",
-    component: UserDashboard,
-    meta: { requiresAuth: false },
-  },
-     {
-    path: "/usermapa",
-    name: "usermapa",
-    component: UserMapa,
-    meta: { requiresAuth: false },
-  },
-     {
-    path: "/userperfil",
-    name: "userperfil",
-    component: UserPerfil,
-    meta: { requiresAuth: false },
-  },
-     {
-    path: "/uservehiculos",
-    name: "uservehiculos",
-    component: UserVehiculos,
-    meta: { requiresAuth: false },
-  },
+  // Rutas de administrador con layout
   {
     path: "/admin",
     component: AdminLayout,
     meta: { requiresAuth: true, requiresRole: "Admin" },
     children: [
       { path: "", redirect: "/admin/dashboard" },
-      { path: "home", name: "AdminLayout", component: AdminLayout },
       { path: "dashboard", name: "AdminDashboard", component: AdminDashboard },
+      { path: "vehiculos", name: "AdminVehiculos", component: AdminVehiculos },
+      { path: "vehiculos/crear", name: "VehiculoCrear", component: VehiculoCrearView },
+      { path: "vehiculos/:id", name: "VehiculoDetalle", component: VehiculoDetalleView, props: true },
+      { path: "vehiculos/:id/editar", name: "VehiculoEditar", component: VehiculoEditarView, props: true },
+      { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
+      { path: "usuarios/crear", name: "UsuarioCrear", component: UsuarioCrearView },
       { path: "asignaciones", name: "AdminAsignaciones", component: AdminAsignaciones },
+      { path: "asignaciones/crear", name: "AsignacionCrear", component: AsignacionCrearView },
       { path: "mapa", name: "AdminMapa", component: AdminMapa },
       { path: "registrar", name: "AdminRegistrar", component: AdminRegistrar },
-      { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
-      { path: "vehiculos", name: "AdminVehiculos", component: AdminVehiculos },
-      { path: "usuarios/crear", name: "UsuarioCrearView", component: UsuarioCrearView },
-      { path: "vehiculos/crear", name: "VehiculoCrearView", component: VehiculoCrearView },
-      { path: "vehiculos/:id", name: "VehiculoDetalleView", component: VehiculoDetalleView },
-      { path: "vehiculos/:id/editar", name: "VehiculoEditarView", component: VehiculoEditarView },
-      { path: "asignaciones/crear", name: "AsignacionCrearView", component: AsignacionCrearView },
-      { path: "perfil", name: "PerfilAdminView", component: PerfilAdminView },
-      
-
+      { path: "perfil", name: "PerfilAdmin", component: PerfilAdminView },
     ],
   },
+  // Rutas de usuario con layout
   {
     path: "/user",
     component: UserLayout,
     meta: { requiresAuth: true, requiresRole: "User" },
     children: [
-      { path: "", redirect: "/user/dashboarduser" },
-      { path: "dashboarduser", name: "UserDashboard", component: UserDashboard },
-      { path: "usermapa", name: "UserMapa", component: UserMapa },
-      { path: "userperfil", name: "UserPerfil", component: UserPerfil },
-      { path: "uservehiculos", name: "UserVehiculos", component: UserVehiculos },
+      { path: "", redirect: "/user/dashboard" },
+      { path: "dashboard", name: "UserDashboard", component: UserDashboard },
+      { path: "vehiculos", name: "UserVehiculos", component: UserVehiculos },
+      { path: "mapa", name: "UserMapa", component: UserMapa },
+      { path: "perfil", name: "UserPerfil", component: UserPerfil },
     ],
+  },
+  // Rutas directas (sin layout) - para compatibilidad
+  {
+    path: "/dashboard",
+    redirect: "/admin/dashboard",
+  },
+  {
+    path: "/vehiculos",
+    redirect: "/admin/vehiculos",
+  },
+  {
+    path: "/usuarios",
+    redirect: "/admin/usuarios",
+  },
+  {
+    path: "/asignaciones",
+    redirect: "/admin/asignaciones",
+  },
+  {
+    path: "/mapa",
+    redirect: "/admin/mapa",
+  },
+  {
+    path: "/dashboarduser",
+    redirect: "/user/dashboard",
+  },
+  {
+    path: "/uservehiculos",
+    redirect: "/user/vehiculos",
+  },
+  {
+    path: "/usermapa",
+    redirect: "/user/mapa",
+  },
+  {
+    path: "/userperfil",
+    redirect: "/user/perfil",
   },
   {
     path: "/:pathMatch(.*)*",
-    redirect: "/",
+    redirect: "/login",
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore();
+  const authStore = useAuthStore()
 
+  // Si la ruta requiere autenticación
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      if (to.name !== "Login") {
-        return next({ name: "Login" });
-      } else {
-        return next(); // Ya estás en login, continúa normalmente
-      }
+      return next({ name: "Login" })
     }
 
-    if (to.meta.requiresRole && authStore.user?.role !== to.meta.requiresrolee) {
-      if (authStore.user?.role === "Admin") {
-        if (to.name !== "AdminDashboard") {
-          return next({ name: "AdminDashboard" });
-        }
-      } else {
-        if (to.name !== "UserDashboard") {
-          return next({ name: "UserDashboard" });
+    // Verificar rol si es necesario
+    if (to.meta.requiresRole) {
+      if (authStore.user?.role !== to.meta.requiresRole) {
+        // Redirigir según el rol del usuario
+        if (authStore.user?.role === "Admin") {
+          return next({ name: "AdminDashboard" })
+        } else {
+          return next({ name: "UserDashboard" })
         }
       }
-      return next(); // Si ya estás en dashboard correcto
     }
   }
 
+  // Si está autenticado y trata de ir al login, redirigir al dashboard
   if (to.name === "Login" && authStore.isAuthenticated) {
     if (authStore.user?.role === "Admin") {
-      if (to.name !== "AdminDashboard") {
-        return next({ name: "AdminDashboard" });
-      }
+      return next({ name: "AdminDashboard" })
     } else {
-      if (to.name !== "UserDashboard") {
-        return next({ name: "UserDashboard" });
-      }
+      return next({ name: "UserDashboard" })
     }
-    return next(); // Ya estás en dashboard correcto
   }
 
-  next();
-});
+  next()
+})
 
-export default router;
+export default router

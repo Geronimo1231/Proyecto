@@ -9,7 +9,7 @@
       </div>
       <div class="mt-4 flex md:ml-4 md:mt-0">
         <router-link
-          to="/usuarios/crear"
+          to="/admin/usuarios/crear"
           class="ml-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >
           <PlusIcon class="-ml-0.5 mr-1.5 h-5 w-5" />

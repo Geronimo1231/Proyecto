@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize"
-import sequelize from '../config/database.js' 
-
+import sequelize from "../config/database.js"
 
 const Assignment = sequelize.define(
   "Assignment",
@@ -13,17 +12,25 @@ const Assignment = sequelize.define(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "Users",
+        key: "id",
+      },
     },
     vehicleId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "Vehicles",
+        key: "id",
+      },
     },
     assignmentDate: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    returnDate: {
+    unassignmentDate: {
       type: DataTypes.DATE,
       allowNull: true,
     },
@@ -39,10 +46,8 @@ const Assignment = sequelize.define(
   },
   {
     tableName: "Assignments",
-    timestamps: true,
     paranoid: true,
   },
 )
 
-export { Assignment }
 export default Assignment

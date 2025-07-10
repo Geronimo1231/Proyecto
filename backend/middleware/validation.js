@@ -1,126 +1,123 @@
-import Joi from "joi"
+import { body, validationResult } from "express-validator"
 
-export const validateUser = (req, res, next) => {
-  const { firstName, lastName, email } = req.body
+export const validateLogin = [
+  body("email")
+    .isEmail()
+    .withMessage("Debe ser un email válido")
+    .normalizeEmail(),
 
-  if (!firstName || !lastName || !email) {
-    return res.status(400).json({
-      success: false,
-      message: "Nombre, apellido y email son requeridos",
-    })
-  }
+  body("password")
+    .notEmpty()
+    .withMessage("La contraseña es requerida"),
 
-  const schema = Joi.object({
-    firstName: Joi.string().min(2).max(100).required(),
-    lastName: Joi.string().min(2).max(100).required(),
-    email: Joi.string().email().required(),
-    phone: Joi.string().allow("", null).optional(),
-    password: Joi.string().min(8).required(),
-    role: Joi.string().valid("Admin", "User").optional(),
-  })
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Datos de entrada inválidos",
+        errors: errors.array(),
+      });
+    }
+    next();
+  },
+];
 
-  const { error } = schema.validate(req.body)
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Datos inválidos",
-      errors: error.details.map((detail) => detail.message),
-    })
-  }
 
-  next()
-}
+export const validateUser = [
+  body("firstName")
+    .notEmpty()
+    .withMessage("El nombre es requerido")
+    .isLength({ min: 2, max: 100 })
+    .withMessage("El nombre debe tener entre 2 y 100 caracteres"),
 
-export const validateAssignment = (req, res, next) => {
-  const schema = Joi.object({
-    userId: Joi.number().integer().required(),
-    vehicleId: Joi.number().integer().required(),
-    startDate: Joi.date().required(),
-    endDate: Joi.date().greater(Joi.ref("startDate")).optional(),
-    isActive: Joi.boolean().optional(),
-  })
+  body("lastName")
+    .notEmpty()
+    .withMessage("El apellido es requerido")
+    .isLength({ min: 2, max: 100 })
+    .withMessage("El apellido debe tener entre 2 y 100 caracteres"),
 
-  const { error } = schema.validate(req.body)
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Datos de asignación inválidos",
-      errors: error.details.map((detail) => detail.message),
-    })
-  }
+  body("email").isEmail().withMessage("Debe ser un email válido").normalizeEmail(),
 
-  next()
-}
+  body("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
 
-export const validateGpsLocation = (req, res, next) => {
-  const { latitud, longitud, vehiculo_id } = req.body
+  body("phone").optional().isMobilePhone().withMessage("Debe ser un número de teléfono válido"),
 
-  if (!latitud || !longitud || !vehiculo_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Latitud, longitud y ID del vehículo son requeridos",
-    })
-  }
+  body("role").optional().isIn(["Admin", "User"]).withMessage("El rol debe ser Admin o User"),
 
-  const schema = Joi.object({
-    vehicleId: Joi.number().integer().required(),
-    latitude: Joi.number().min(-90).max(90).required(),
-    longitude: Joi.number().min(-180).max(180).required(),
-    gpsTimestamp: Joi.date().optional(), // opcional según tu modelo
-  })
+  (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Datos de entrada inválidos",
+        errors: errors.array(),
+      })
+    }
+    next()
+  },
+]
 
-  const { error } = schema.validate(req.body)
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Datos de ubicación GPS inválidos",
-      errors: error.details.map((detail) => detail.message),
-    })
-  }
+export const validateVehicle = [
+  body("licensePlate")
+    .notEmpty()
+    .withMessage("La matrícula es requerida")
+    .isLength({ min: 3, max: 20 })
+    .withMessage("La matrícula debe tener entre 3 y 20 caracteres"),
 
-  next()
-}
+  body("model")
+    .notEmpty()
+    .withMessage("El modelo es requerido")
+    .isLength({ min: 2, max: 100 })
+    .withMessage("El modelo debe tener entre 2 y 100 caracteres"),
 
-export const validateVehicle = (req, res, next) => {
-  const schema = Joi.object({
-    licensePlate: Joi.string().required(),
-    model: Joi.string().required(),
-    brand: Joi.string().required(),
-    year: Joi.number().integer().min(1900).max(2030).required(),
-    type: Joi.string().allow("", null).optional(),
-    color: Joi.string().allow("", null).optional(),
-    mileage: Joi.number().integer().min(0).optional(),
-    engineNumber: Joi.string().allow("", null).optional(),
-    chassisNumber: Joi.string().allow("", null).optional(),
-    status: Joi.string().valid("available", "assigned", "maintenance", "out_of_service").optional(),
-  })
+  body("brand")
+    .notEmpty()
+    .withMessage("La marca es requerida")
+    .isLength({ min: 2, max: 100 })
+    .withMessage("La marca debe tener entre 2 y 100 caracteres"),
 
-  const { error } = schema.validate(req.body)
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Datos inválidos",
-      errors: error.details.map((detail) => detail.message),
-    })
-  }
+  body("year")
+    .optional()
+    .isInt({ min: 1900, max: new Date().getFullYear() + 1 })
+    .withMessage("El año debe ser válido"),
 
-  next()
-}
+  body("color").optional().isLength({ max: 50 }).withMessage("El color no puede exceder 50 caracteres"),
 
-export const validateLogin = (req, res, next) => {
-  const schema = Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  })
+  body("vehicleType")
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage("El tipo de vehículo no puede exceder 50 caracteres"),
 
-  const { error } = schema.validate(req.body)
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Datos inválidos",
-      errors: error.details.map((detail) => detail.message),
-    })
-  }
+  (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Datos de entrada inválidos",
+        errors: errors.array(),
+      })
+    }
+    next()
+  },
+]
 
-  next()
-}
+export const validateAssignment = [
+  body("userId").isInt().withMessage("El ID del usuario debe ser un número entero"),
+
+  body("vehicleId").isInt().withMessage("El ID del vehículo debe ser un número entero"),
+
+  body("notes").optional().isLength({ max: 500 }).withMessage("Las notas no pueden exceder 500 caracteres"),
+
+  (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Datos de entrada inválidos",
+        errors: errors.array(),
+      })
+    }
+    next()
+  },
+]

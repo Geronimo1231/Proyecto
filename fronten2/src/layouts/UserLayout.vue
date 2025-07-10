@@ -47,14 +47,14 @@
               <button
                 type="button"
                 class="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
-                @click="showProfileMenu = !showProfileMenu"
+                @click="toggleProfileMenu"
               >
                 <img
                   class="h-8 w-8 rounded-full bg-gray-50"
-                  :src="authStore.user?.foto_perfil || '/placeholder.svg?height=32&width=32'"
-                  :alt="authStore.user?.nombre"
+                  :src="authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
+                  :alt="`${authStore.user?.firstName} ${authStore.user?.lastName}`"
                 />
-                <span>{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</span>
+                <span>{{ authStore.user?.firstName }} {{ authStore.user?.lastName }}</span>
                 <ChevronDownIcon class="h-5 w-5 text-gray-400" />
               </button>
 
@@ -65,7 +65,7 @@
                 <router-link
                   to="/user/perfil"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="showProfileMenu = false"
+                  @click="closeProfileMenu"
                 >
                   Mi Perfil
                 </router-link>
@@ -118,15 +118,23 @@ const sidebarOpen = ref(true)
 const showProfileMenu = ref(false)
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboarduser', icon: HomeIcon },
-  { name: 'Mis Vehículos', href: '/uservehiculos', icon: TruckIcon },
-  { name: 'Mapa GPS', href: '/usermapa', icon: MapPinIcon },
-  { name: 'Mi Perfil', href: '/userperfil', icon: UserIcon }
+  { name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
+  { name: 'Mis Vehículos', href: '/user/vehiculos', icon: TruckIcon },
+  { name: 'Mapa GPS', href: '/user/mapa', icon: MapPinIcon },
+  { name: 'Mi Perfil', href: '/user/perfil', icon: UserIcon }
 ]
 
 const logout = () => {
   authStore.logout()
   router.push('/login')
+}
+
+const toggleProfileMenu = () => {
+  showProfileMenu.value = !showProfileMenu.value
+}
+
+const closeProfileMenu = () => {
+  showProfileMenu.value = false
 }
 
 const handleClickOutside = (event) => {

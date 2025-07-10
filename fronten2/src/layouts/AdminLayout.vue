@@ -1,8 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Sidebar -->
-   
-
     <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out" :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
       <div class="flex items-center justify-center h-16 bg-blue-600">
         <TruckIcon class="h-8 w-8 text-white" />
@@ -53,10 +51,10 @@
               >
                 <img
                   class="h-8 w-8 rounded-full bg-gray-50"
-                  :src="authStore.user?.foto_perfil || '/placeholder.svg?height=32&width=32'"
-                  :alt="authStore.user?.nombre"
+                  :src="authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
+                  :alt="`${authStore.user?.firstName} ${authStore.user?.lastName}`"
                 />
-                <span>{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</span>
+                <span>{{ authStore.user?.firstName }} {{ authStore.user?.lastName }}</span>
                 <ChevronDownIcon class="h-5 w-5 text-gray-400" />
               </button>
 
@@ -64,6 +62,13 @@
                 v-if="showProfileMenu"
                 class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
               >
+                <router-link
+                  to="/admin/perfil"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showProfileMenu = false"
+                >
+                  Mi Perfil
+                </router-link>
                 <button
                   @click="logout"
                   class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
@@ -106,22 +111,21 @@ import {
   MapPinIcon,
   UserPlusIcon,
   ClipboardDocumentListIcon,
-  //ChartBarIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const sidebarOpen = ref(true)
-const showProfileMenu = ref(true)
+const showProfileMenu = ref(false)
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Vehículos', href: '/vehiculos', icon: TruckIcon },
-  { name: 'Usuarios', href: '/usuarios', icon: UsersIcon },
-  { name: 'Asignaciones', href: '/asignaciones', icon: ClipboardDocumentListIcon },
-  { name: 'Mapa GPS', href: '/mapa', icon: MapPinIcon },
-  //{ name: 'Registrar', href: '/registrar', icon: UserPlusIcon }
+  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
+  { name: 'Vehículos', href: '/admin/vehiculos', icon: TruckIcon },
+  { name: 'Usuarios', href: '/admin/usuarios', icon: UsersIcon },
+  { name: 'Asignaciones', href: '/admin/asignaciones', icon: ClipboardDocumentListIcon },
+  { name: 'Mapa GPS', href: '/admin/mapa', icon: MapPinIcon },
+  //{ name: 'Registrar', href: '/admin/registrar', icon: UserPlusIcon }
 ]
 
 const logout = () => {

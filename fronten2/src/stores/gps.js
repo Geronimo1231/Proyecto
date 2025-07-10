@@ -1,83 +1,190 @@
-"use client"
-
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
-import api from "../services/api"
-import io from "socket.io-client"
-import { toast } from 'vue3-toastify'
-//import { useGpsStore } from "@/stores/gps"
+import { useAuthStore } from "./auth"
+import { toast } from "vue3-toastify"
 
-const gpsStore = useGpsStore()
-
-console.log(gpsStore.ubicaciones) // o gpsStore.metodo(), etc.
-
-
-const useGpsStore = defineStore("gps", () => {
+export const useGpsStore = defineStore("gps", () => {
   const locations = ref([])
   const loading = ref(false)
-  const socket = ref(null)
-  const isConnected = ref(false)
+  const realTimeEnabled = ref(false)
+  const lastUpdate = ref(null)
+  const selectedLocation = ref(null)
 
+  const authStore = useAuthStore()
+
+  // Computed
   const latestLocations = computed(() => {
-    const latest = new Map()
+    const vehicleMap = new Map()
     locations.value.forEach((location) => {
-      const existing = latest.get(location.vehicleId)
-      if (!existing || new Date(location.gpsTimestamp) > new Date(existing.gpsTimestamp)) {
-        latest.set(location.vehicleId, location)
+      const vehicleId = location.vehicleId
+      if (
+        !vehicleMap.has(vehicleId) ||
+        new Date(location.gpsTimestamp) > new Date(vehicleMap.get(vehicleId).gpsTimestamp)
+      ) {
+        vehicleMap.set(vehicleId, location)
       }
     })
-    return Array.from(latest.values())
+    return Array.from(vehicleMap.values())
   })
 
-  const getVehicleLocation = computed(() => (vehicleId) => {
-    return locations.value
-      .filter((loc) => loc.vehicleId === vehicleId)
-      .sort((a, b) => new Date(b.gpsTimestamp) - new Date(a.gpsTimestamp))[0]
-  })
+  const activeVehicleLocations = computed(() =>
+    latestLocations.value.filter((location) => location.vehicle && location.vehicle.status === "Asignado"),
+  )
 
-  const initSocket = () => {
-    if (socket.value) return
+  const activeLocations = computed(() => locations.value.filter((location) => location.isActive))
 
-    socket.value = io(import.meta.env.VITE_API_URL || "http://localhost:8080")
+  // Actions
+  const fetchAllLocations = async (params = {}) => {
+    try {
+      loading.value = true
+      const queryParams = new URLSearchParams({
+        latest: params.latest || "true",
+        limit: params.limit || "1000",
+      }).toString()
 
-    socket.value.on("connect", () => {
-      isConnected.value = true
-      console.log("GPS Socket conectado")
-    })
+      const response = await authStore.apiCall(`/gps/locations?${queryParams}`, "GET")
 
-    socket.value.on("disconnect", () => {
-      isConnected.value = false
-      console.log("GPS Socket desconectado")
-    })
-
-    socket.value.on("location-update", (locationData) => {
-      updateLocation(locationData)
-    })
-
-    socket.value.on("bulk-location-update", (locationsData) => {
-      locationsData.forEach((locationData) => {
-        updateLocation(locationData)
-      })
-    })
-  }
-
-  const disconnectSocket = () => {
-    if (socket.value) {
-      socket.value.disconnect()
-      socket.value = null
-      isConnected.value = false
+      if (response.success) {
+        locations.value = response.data
+        lastUpdate.value = new Date()
+      }
+    } catch (error) {
+      toast.error("Error al cargar las ubicaciones GPS")
+      console.error("Error fetching GPS locations:", error)
+    } finally {
+      loading.value = false
     }
   }
 
-  const updateLocation = (locationData) => {
-    const existingIndex = locations.value.findIndex(
-      (loc) => loc.vehicleId === locationData.vehicleId && loc.gpsTimestamp === locationData.gpsTimestamp,
-    )
+  const fetchVehicleLocations = async (vehicleId, params = {}) => {
+    try {
+      const queryParams = new URLSearchParams({
+        limit: params.limit || "100",
+        startDate: params.startDate || "",
+        endDate: params.endDate || "",
+      }).toString()
 
-    if (existingIndex === -1) {
-      locations.value.push(locationData)
-    } else {
-      locations.value[existingIndex] = locationData
+      const response = await authStore.apiCall(`/gps/vehicle/${vehicleId}?${queryParams}`, "GET")
+      return response.success ? response.data : []
+    } catch (error) {
+      toast.error("Error al cargar las ubicaciones del vehículo")
+      console.error("Error fetching vehicle locations:", error)
+      return []
+    }
+  }
+
+  const fetchUserVehicleLocations = async (params = {}) => {
+    try {
+      loading.value = true
+      const queryParams = new URLSearchParams({
+        latest: params.latest || "true",
+        limit: params.limit || "100",
+      }).toString()
+
+      const response = await authStore.apiCall(`/gps/user/locations?${queryParams}`, "GET")
+
+      if (response.success) {
+        locations.value = response.data
+        lastUpdate.value = new Date()
+      }
+    } catch (error) {
+      toast.error("Error al cargar las ubicaciones de tus vehículos")
+      console.error("Error fetching user vehicle locations:", error)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const getLatestVehicleLocation = async (vehicleId) => {
+    try {
+      const response = await authStore.apiCall(`/gps/vehicle/${vehicleId}/latest`, "GET")
+      return response.success ? response.data : null
+    } catch (error) {
+      console.error("Error fetching latest vehicle location:", error)
+      return null
+    }
+  }
+
+  const createGpsLocation = async (locationData) => {
+    try {
+      const response = await authStore.apiCall("/gps/locations", "POST", locationData)
+
+      if (response.success) {
+        // Add to local state if successful
+        locations.value.unshift(response.data)
+        return { success: true, data: response.data }
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || "Error al crear la ubicación GPS"
+      toast.error(message)
+      return { success: false, message }
+    }
+  }
+
+  const bulkCreateGpsLocations = async (locationsData) => {
+    try {
+      loading.value = true
+      const response = await authStore.apiCall("/gps/locations/bulk", "POST", {
+        locations: locationsData,
+      })
+
+      if (response.success) {
+        toast.success(`Se crearon ${response.data.length} ubicaciones GPS`)
+        await fetchAllLocations() // Refresh locations
+        return { success: true, data: response.data }
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || "Error al crear las ubicaciones GPS"
+      toast.error(message)
+      return { success: false, message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteOldLocations = async (days = 30) => {
+    try {
+      const response = await authStore.apiCall(`/gps/cleanup?days=${days}`, "DELETE")
+
+      if (response.success) {
+        toast.success(`Se eliminaron ubicaciones anteriores a ${days} días`)
+        await fetchAllLocations() // Refresh locations
+        return { success: true }
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || "Error al limpiar ubicaciones antiguas"
+      toast.error(message)
+      return { success: false, message }
+    }
+  }
+
+  const startRealTimeTracking = () => {
+    realTimeEnabled.value = true
+    // Refresh locations every 30 seconds
+    const interval = setInterval(async () => {
+      if (realTimeEnabled.value) {
+        await fetchAllLocations({ latest: "true" })
+      } else {
+        clearInterval(interval)
+      }
+    }, 30000)
+  }
+
+  const stopRealTimeTracking = () => {
+    realTimeEnabled.value = false
+  }
+
+  const getLocationHistory = async (vehicleId, startDate, endDate) => {
+    try {
+      const response = await authStore.apiCall(
+        `/gps/vehicle/${vehicleId}/history?startDate=${startDate}&endDate=${endDate}`,
+        "GET",
+      )
+      return response.success ? response.data : []
+    } catch (error) {
+      toast.error("Error al cargar el historial de ubicaciones")
+      console.error("Error fetching location history:", error)
+      return []
     }
   }
 
@@ -85,10 +192,14 @@ const useGpsStore = defineStore("gps", () => {
     try {
       loading.value = true
       const params = new URLSearchParams(filters).toString()
-      const response = await api.get(`/gps${params ? `?${params}` : ""}`)
-      locations.value = response.data.data
-      return { success: true, data: response.data.data }
+      const response = await authStore.apiCall(`/gps${params ? `?${params}` : ""}`)
+
+      if (response.success) {
+        locations.value = response.data
+        return { success: true, data: response.data }
+      }
     } catch (error) {
+      console.error("Error al cargar ubicaciones GPS:", error)
       toast.error("Error al cargar las ubicaciones GPS")
       return { success: false, error }
     } finally {
@@ -96,59 +207,88 @@ const useGpsStore = defineStore("gps", () => {
     }
   }
 
-  const fetchLatestLocations = async () => {
+  const fetchUserLocations = async () => {
     try {
       loading.value = true
-      const response = await api.get("/gps/latest")
-      locations.value = response.data.data
-      return { success: true, data: response.data.data }
+      const response = await authStore.apiCall("/gps/user/locations")
+
+      if (response.success) {
+        locations.value = response.data
+        return { success: true, data: response.data }
+      }
     } catch (error) {
-      toast.error("Error al cargar las últimas ubicaciones")
-      return { success: false, error }
-    } finally {
-      loading.value = false
-    }
-  }
-  const fetchVehicleHistory = async (vehicleId, timeRange = "24h") => {
-    try {
-      loading.value = true
-      const response = await api.get(`/gps/vehicle/${vehicleId}/history?range=${timeRange}`)
-      return { success: true, data: response.data.data }
-    } catch (error) {
-      toast.error("Error al cargar el historial del vehículo")
+      console.error("Error al cargar ubicaciones del usuario:", error)
+      toast.error("Error al cargar las ubicaciones")
       return { success: false, error }
     } finally {
       loading.value = false
     }
   }
 
-  const addLocation = async (locationData) => {
+  const fetchLocationHistory = async (vehicleId, startDate, endDate) => {
     try {
-      const response = await api.post("/gps", locationData)
-      updateLocation(response.data.data)
-      return { success: true, data: response.data.data }
+      loading.value = true
+      const params = new URLSearchParams({
+        vehicleId,
+        startDate,
+        endDate,
+      }).toString()
+
+      const response = await authStore.apiCall(`/gps/history?${params}`)
+
+      if (response.success) {
+        return { success: true, data: response.data }
+      }
     } catch (error) {
-      console.error("Error al agregar ubicación:", error)
+      console.error("Error al cargar historial:", error)
+      toast.error("Error al cargar el historial de ubicaciones")
       return { success: false, error }
+    } finally {
+      loading.value = false
     }
   }
 
-  const clearLocations = () => {
-    locations.value = []
+  const updateLocation = (locationData) => {
+    const index = locations.value.findIndex((loc) => loc.vehicleId === locationData.vehicleId)
+    if (index !== -1) {
+      locations.value[index] = locationData
+    } else {
+      locations.value.push(locationData)
+    }
+  }
+
+  const setSelectedLocation = (location) => {
+    selectedLocation.value = location
   }
 
   return {
+    // State
     locations,
     loading,
-    isConnected,
+    realTimeEnabled,
+    lastUpdate,
+    selectedLocation,
+
+    // Computed
     latestLocations,
-    getVehicleLocation,
-    initSocket,
-    disconnectSocket,
+    activeVehicleLocations,
+    activeLocations,
+
+    // Actions
+    fetchAllLocations,
+    fetchVehicleLocations,
+    fetchUserVehicleLocations,
+    getLatestVehicleLocation,
+    createGpsLocation,
+    bulkCreateGpsLocations,
+    deleteOldLocations,
+    startRealTimeTracking,
+    stopRealTimeTracking,
+    getLocationHistory,
     fetchLocations,
-    fetchLatestLocations,
-    fetchVehicleHistory,
-    addLocation,
-    clearLocations,
+    fetchUserLocations,
+    fetchLocationHistory,
+    updateLocation,
+    setSelectedLocation,
   }
 })

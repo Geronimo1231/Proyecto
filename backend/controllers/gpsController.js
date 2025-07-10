@@ -6,9 +6,9 @@ import { Op } from "sequelize"
 
 export const createGpsLocation = async (req, res) => {
   try {
-    const { vehicleId, latitude, longitude, speed, heading, altitude, accuracy } = req.body
+    const { vehicleId, latitude, longitude, speed, direction } = req.body
 
-    // Verify vehicle exists
+    // Verificar que el vehículo existe
     const vehicle = await Vehicle.findByPk(vehicleId)
     if (!vehicle) {
       return res.status(404).json({
@@ -22,9 +22,7 @@ export const createGpsLocation = async (req, res) => {
       latitude,
       longitude,
       speed: speed || 0,
-      heading: heading || 0,
-      altitude: altitude || 0,
-      accuracy: accuracy || 0,
+      direction: direction || 0,
       gpsTimestamp: new Date(),
     })
 
@@ -40,6 +38,7 @@ export const createGpsLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -87,6 +86,7 @@ export const getVehicleLocations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -123,6 +123,7 @@ export const getLatestVehicleLocation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -134,7 +135,7 @@ export const getAllVehicleLocations = async (req, res) => {
     let locations
 
     if (latest === "true") {
-      // Get latest location for each vehicle
+      // Obtener la última ubicación de cada vehículo
       const vehicles = await Vehicle.findAll({
         attributes: ["id"],
       })
@@ -178,6 +179,7 @@ export const getAllVehicleLocations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -187,7 +189,7 @@ export const getUserVehicleLocations = async (req, res) => {
     const userId = req.user.id
     const { limit = 100, latest = false } = req.query
 
-    // Get user's assigned vehicles
+    // Obtener vehículos asignados al usuario
     const assignments = await Assignment.findAll({
       where: { userId, isActive: true },
       attributes: ["vehicleId"],
@@ -206,7 +208,7 @@ export const getUserVehicleLocations = async (req, res) => {
     let locations
 
     if (latest === "true") {
-      // Get latest location for each assigned vehicle
+      // Obtener la última ubicación de cada vehículo asignado
       const locationPromises = vehicleIds.map((vehicleId) =>
         GpsLocation.findOne({
           where: { vehicleId },
@@ -249,6 +251,7 @@ export const getUserVehicleLocations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -278,6 +281,7 @@ export const deleteOldLocations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
@@ -294,19 +298,19 @@ export const bulkCreateGpsLocations = async (req, res) => {
       })
     }
 
-    // Extrae los IDs únicos de vehículos del array
-    const vehicleIds = [...new Set(locations.map(loc => loc.vehicleId))]
+    // Extraer los IDs únicos de vehículos del array
+    const vehicleIds = [...new Set(locations.map((loc) => loc.vehicleId))]
 
-    // Verifica que los vehículos existen
+    // Verificar que los vehículos existen
     const existingVehicles = await Vehicle.findAll({
       where: { id: { [Op.in]: vehicleIds } },
       attributes: ["id"],
     })
 
-    const existingVehicleIds = new Set(existingVehicles.map(v => v.id))
+    const existingVehicleIds = new Set(existingVehicles.map((v) => v.id))
 
-    // Filtra solo ubicaciones con vehicleId válido
-    const validLocations = locations.filter(loc => existingVehicleIds.has(loc.vehicleId))
+    // Filtrar solo ubicaciones con vehicleId válido
+    const validLocations = locations.filter((loc) => existingVehicleIds.has(loc.vehicleId))
 
     if (validLocations.length === 0) {
       return res.status(400).json({
@@ -315,17 +319,17 @@ export const bulkCreateGpsLocations = async (req, res) => {
       })
     }
 
-    // Inserta las ubicaciones en la base de datos
-    const created = await GpsLocation.bulkCreate(validLocations.map(loc => ({
-      vehicleId: loc.vehicleId,
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      speed: loc.speed || 0,
-      heading: loc.heading || 0,
-      altitude: loc.altitude || 0,
-      accuracy: loc.accuracy || 0,
-      gpsTimestamp: loc.gpsTimestamp ? new Date(loc.gpsTimestamp) : new Date(),
-    })))
+    // Insertar las ubicaciones en la base de datos
+    const created = await GpsLocation.bulkCreate(
+      validLocations.map((loc) => ({
+        vehicleId: loc.vehicleId,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        speed: loc.speed || 0,
+        direction: loc.direction || 0,
+        gpsTimestamp: loc.gpsTimestamp ? new Date(loc.gpsTimestamp) : new Date(),
+      })),
+    )
 
     logger.info(`Se crearon ${created.length} ubicaciones GPS en bulk`)
 
@@ -339,6 +343,7 @@ export const bulkCreateGpsLocations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
+      error: error.message,
     })
   }
 }
