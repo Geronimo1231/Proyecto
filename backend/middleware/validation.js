@@ -23,7 +23,6 @@ export const validateLogin = [
   },
 ];
 
-
 export const validateUser = [
   body("firstName")
     .notEmpty()
