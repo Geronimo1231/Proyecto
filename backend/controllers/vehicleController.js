@@ -1,8 +1,17 @@
 import { Vehicle, User, Assignment } from "../models/index.js"
 import pkg from "../config/config.cjs"
 const { logger } = pkg
-
 import { Op } from "sequelize"
+
+// Función para manejar errores
+const handleError = (res, error, context) => {
+  logger.error(`Error en ${context}:`, error)
+  res.status(500).json({
+    success: false,
+    message: "Error interno del servidor",
+    error: error.message || "Unknown error",
+  })
+}
 
 export const getAllVehicles = async (req, res) => {
   try {
@@ -19,11 +28,11 @@ export const getAllVehicles = async (req, res) => {
       ]
     }
 
-    if (status && status !== "") {
+    if (status) {
       whereClause.status = status
     }
 
-    if (brand && brand !== "") {
+    if (brand) {
       whereClause.brand = { [Op.iLike]: `%${brand}%` }
     }
 
@@ -55,12 +64,7 @@ export const getAllVehicles = async (req, res) => {
       },
     })
   } catch (error) {
-    logger.error("Error en getAllVehicles:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'getAllVehicles')
   }
 }
 
@@ -103,12 +107,7 @@ export const getVehicleById = async (req, res) => {
       data: vehicle,
     })
   } catch (error) {
-    logger.error("Error en getVehicleById:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'getVehicleById')
   }
 }
 
@@ -116,7 +115,6 @@ export const createVehicle = async (req, res) => {
   try {
     const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber } = req.body
 
-    // Verificar que no exista un vehículo con la misma placa
     const existingVehicle = await Vehicle.findOne({ where: { licensePlate } })
     if (existingVehicle) {
       return res.status(400).json({
@@ -146,12 +144,7 @@ export const createVehicle = async (req, res) => {
       data: vehicle,
     })
   } catch (error) {
-    logger.error("Error en createVehicle:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'createVehicle')
   }
 }
 
@@ -168,7 +161,6 @@ export const updateVehicle = async (req, res) => {
       })
     }
 
-    // Verificar que no exista otro vehículo con la misma placa
     if (licensePlate && licensePlate !== vehicle.licensePlate) {
       const existingVehicle = await Vehicle.findOne({
         where: { licensePlate, id: { [Op.ne]: id } },
@@ -202,12 +194,7 @@ export const updateVehicle = async (req, res) => {
       data: vehicle,
     })
   } catch (error) {
-    logger.error("Error en updateVehicle:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'updateVehicle')
   }
 }
 
@@ -223,7 +210,6 @@ export const deleteVehicle = async (req, res) => {
       })
     }
 
-    // Verificar que no tenga asignaciones activas
     const activeAssignments = await Assignment.count({
       where: { vehicleId: id, isActive: true },
     })
@@ -244,12 +230,7 @@ export const deleteVehicle = async (req, res) => {
       message: "Vehículo eliminado correctamente",
     })
   } catch (error) {
-    logger.error("Error en deleteVehicle:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'deleteVehicle')
   }
 }
 
@@ -266,12 +247,7 @@ export const getAvailableVehicles = async (req, res) => {
       data: vehicles,
     })
   } catch (error) {
-    logger.error("Error en getAvailableVehicles:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'getAvailableVehicles')
   }
 }
 
@@ -296,11 +272,6 @@ export const getVehicleStats = async (req, res) => {
       data: stats,
     })
   } catch (error) {
-    logger.error("Error en getVehicleStats:", error)
-    res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-      error: error.message,
-    })
+    handleError(res, error, 'getVehicleStats')
   }
 }

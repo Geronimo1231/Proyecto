@@ -1,5 +1,6 @@
-import { DataTypes } from "sequelize"
-import sequelize from "../config/database.js"
+import { DataTypes } from "sequelize";
+import sequelize from "../config/database.js";
+import User from "./User.js"; // Asegúrate de importar el modelo User
 
 const Vehicle = sequelize.define(
   "Vehicle",
@@ -64,11 +65,26 @@ const Vehicle = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    anotherAssignedUserId: { // Clave foránea diferente para la otra relación
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "Users",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "Vehicles",
     paranoid: true,
-  },
-)
+  }
+);
 
-export default Vehicle
+// Relación entre Vehicle y User para el vehículo asignado
+Vehicle.belongsTo(User, { foreignKey: "assignedTo", as: "assignedUser" }); 
+User.hasMany(Vehicle, { foreignKey: "assignedTo", as: "userAssignedVehicles" }); 
+
+// Nueva relación para el "otro" usuario asignado
+Vehicle.belongsTo(User, { foreignKey: "anotherAssignedUserId", as: "anotherAssignedUser" });
+
+export default Vehicle;
