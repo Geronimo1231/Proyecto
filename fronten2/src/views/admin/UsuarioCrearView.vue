@@ -180,7 +180,7 @@ const createUser = async () => {
     }
 
     await api.post('/users', userData)
-    
+
     toast.success('Usuario creado correctamente')
     router.push('/admin/usuarios')
   } catch (error) {

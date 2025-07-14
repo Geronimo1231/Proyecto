@@ -6,7 +6,7 @@ import { Op } from "sequelize"
 // Función para manejar errores
 const handleError = (res, error, context) => {
   logger.error(`Error en ${context}:`, error)
-  res.status(500).json({
+  res.status(400).json({
     success: false,
     message: "Error interno del servidor",
     error: error.message || "Unknown error",
@@ -18,7 +18,9 @@ export const getAllVehicles = async (req, res) => {
     const { page = 1, limit = 10, search = "", status = "", brand = "" } = req.query
     const offset = (page - 1) * limit
 
-    const whereClause = {}
+    const whereClause = {
+      "deletedAt": null
+    }
 
     if (search) {
       whereClause[Op.or] = [
@@ -51,7 +53,7 @@ export const getAllVehicles = async (req, res) => {
       order: [["createdAt", "DESC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         vehicles,
@@ -63,6 +65,7 @@ export const getAllVehicles = async (req, res) => {
         },
       },
     })
+
   } catch (error) {
     handleError(res, error, 'getAllVehicles')
   }
@@ -96,7 +99,7 @@ export const getVehicleById = async (req, res) => {
     })
 
     if (!vehicle) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Vehículo no encontrado",
       })
@@ -135,10 +138,7 @@ export const createVehicle = async (req, res) => {
       chassisNumber,
       status: "available",
     })
-
-    logger.info(`Vehículo creado: ${licensePlate}`)
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Vehículo creado correctamente",
       data: vehicle,
@@ -155,7 +155,7 @@ export const updateVehicle = async (req, res) => {
 
     const vehicle = await Vehicle.findByPk(id)
     if (!vehicle) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Vehículo no encontrado",
       })

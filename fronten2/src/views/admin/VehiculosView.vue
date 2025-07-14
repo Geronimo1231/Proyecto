@@ -92,13 +92,13 @@
           
           <div class="flex space-x-2">
             <router-link
-              :to="`/vehiculos/${vehiculo.id}/editar`"
+              :to="`/admin/vehiculos/${vehiculo.id}/editar`"
               class="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 text-center"
             >
               Editar
             </router-link>
             <router-link
-              :to="`/vehiculos/${vehiculo.id}`"
+              :to="`/admin/vehiculos/${vehiculo.id}`"
               class="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 text-center"
             >
               Ver Detalles

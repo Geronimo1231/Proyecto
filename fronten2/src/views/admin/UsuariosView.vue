@@ -293,16 +293,18 @@ const editUser = (usuario) => {
 }
 
 const toggleUserStatus = async (usuario) => {
-  try {
     const action = usuario.isActive ? 'desactivar' : 'activar'
     if (confirm(`¿Estás seguro de ${action} este usuario?`)) {
       await api.patch(`/users/${usuario.id}/toggle-status`)
-      toast.success(`Usuario ${action}do correctamente`)
-      await fetchData()
+      .then(() => {
+        toast.success(`Usuario ${action}do correctamente`)
+        fetchData()
+      })
+      .catch((error) => {
+        console.log(error)
+        toast.error('Error al cambiar el estado del usuario')
+      })
     }
-  } catch (error) {
-    toast.error('Error al cambiar el estado del usuario')
-  }
 }
 
 const closeModal = () => {

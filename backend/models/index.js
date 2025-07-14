@@ -15,8 +15,8 @@ Assignment.belongsTo(User, { foreignKey: "userId", as: "user" })
 Vehicle.hasMany(Assignment, { foreignKey: "vehicleId", as: "assignments" })
 Assignment.belongsTo(Vehicle, { foreignKey: "vehicleId", as: "vehicle" })
 
-Vehicle.belongsTo(User, { foreignKey: "assignedUserId", as: "assignedToUser" })  // Cambié el alias a 'assignedToUser'
-User.hasMany(Vehicle, { foreignKey: "assignedUserId", as: "assignedVehicles" })
+//Vehicle.belongsTo(User, { foreignKey: "assignedUserId", as: "assignedToUser" })  // Cambié el alias a 'assignedToUser'
+//User.hasMany(Vehicle, { foreignKey: "assignedUserId", as: "assignedVehicles" })
 
 Vehicle.hasMany(GpsLocation, { foreignKey: "vehicleId", as: "gpsLocations" })
 GpsLocation.belongsTo(Vehicle, { foreignKey: "vehicleId", as: "vehicle" })

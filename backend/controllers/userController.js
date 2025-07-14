@@ -139,9 +139,7 @@ export const createUser = async (req, res) => {
     const userResponse = user.toJSON()
     delete userResponse.password
 
-    logger.info(`Usuario creado: ${email}`)
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Usuario creado correctamente",
       data: userResponse,
@@ -268,7 +266,7 @@ export const toggleUserStatus = async (req, res) => {
 
     const user = await User.findByPk(id)
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Usuario no encontrado",
       })
@@ -278,9 +276,8 @@ export const toggleUserStatus = async (req, res) => {
       isActive: !user.isActive,
     })
 
-    logger.info(`Estado de usuario cambiado: ${user.email} - ${user.isActive ? "Activo" : "Inactivo"}`)
-
-    res.json({
+  
+   res.status(200).json({
       success: true,
       message: `Usuario ${user.isActive ? "activado" : "desactivado"} correctamente`,
       data: {
@@ -290,7 +287,7 @@ export const toggleUserStatus = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en toggleUserStatus:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
