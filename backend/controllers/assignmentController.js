@@ -44,7 +44,7 @@ export const getAllAssignments = async (req, res) => {
       order: [["createdAt", "DESC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         assignments,
@@ -58,7 +58,7 @@ export const getAllAssignments = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en getAllAssignments:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -86,19 +86,19 @@ export const getAssignmentById = async (req, res) => {
     })
 
     if (!assignment) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Asignación no encontrada",
       })
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: assignment,
     })
   } catch (error) {
     logger.error("Error en getAssignmentById:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -113,7 +113,7 @@ export const createAssignment = async (req, res) => {
     // Verificar que el usuario existe
     const user = await User.findByPk(userId)
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Usuario no encontrado",
       })
@@ -122,7 +122,7 @@ export const createAssignment = async (req, res) => {
     // Verificar que el vehículo existe y está disponible
     const vehicle = await Vehicle.findByPk(vehicleId)
     if (!vehicle) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Vehículo no encontrado",
       })
@@ -180,14 +180,14 @@ export const createAssignment = async (req, res) => {
 
     logger.info(`Asignación creada: Usuario ${userId} - Vehículo ${vehicleId}`)
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Asignación creada correctamente",
       data: newAssignment,
     })
   } catch (error) {
     logger.error("Error en createAssignment:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -202,7 +202,7 @@ export const updateAssignment = async (req, res) => {
 
     const assignment = await Assignment.findByPk(id)
     if (!assignment) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Asignación no encontrada",
       })
@@ -234,7 +234,7 @@ export const updateAssignment = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en updateAssignment:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -256,7 +256,7 @@ export const deactivateAssignment = async (req, res) => {
     })
 
     if (!assignment) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Asignación no encontrada",
       })
@@ -289,7 +289,7 @@ export const deactivateAssignment = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en deactivateAssignment:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -311,7 +311,7 @@ export const deleteAssignment = async (req, res) => {
     })
 
     if (!assignment) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Asignación no encontrada",
       })
@@ -335,7 +335,7 @@ export const deleteAssignment = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en deleteAssignment:", error)
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,

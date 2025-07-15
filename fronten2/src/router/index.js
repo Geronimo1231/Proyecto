@@ -14,6 +14,9 @@ import AdminRegistrar from "../views/admin/RegistrarView.vue"
 import AdminUsuarios from "../views/admin/UsuariosView.vue"
 import AdminVehiculos from "../views/admin/VehiculosView.vue"
 import UsuarioCrearView from "../views/admin/UsuarioCrearView.vue"
+import UsuarioEditarView from "../views/admin/UsuarioEditarView.vue"
+import AsignacionDetalleView from "../views/admin/AsignacionDetalleView.vue"
+
 import VehiculoCrearView from "../views/admin/VehiculoCrearView.vue"
 import VehiculoDetalleView from "../views/admin/VehiculoDetalleView.vue"
 import VehiculoEditarView from "../views/admin/VehiculoEditarView.vue"
@@ -44,6 +47,7 @@ const routes = [
     component: Login,
     meta: { requiresAuth: false },
   },
+
   // Rutas de administrador con layout
   {
     path: "/admin",
@@ -58,8 +62,11 @@ const routes = [
       { path: "vehiculos/:id/editar", name: "VehiculoEditar", component: VehiculoEditarView, props: true },
       { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
       { path: "usuarios/crear", name: "UsuarioCrear", component: UsuarioCrearView },
+      { path: "usuarios/editar/:id", name: "UsuarioEditarView", component: UsuarioEditarView },
       { path: "asignaciones", name: "AdminAsignaciones", component: AdminAsignaciones },
       { path: "asignaciones/crear", name: "AsignacionCrear", component: AsignacionCrearView },
+      { path: "asignaciones/detalle", name: "AsignacionDetalleView ", component: AsignacionDetalleView },
+
       { path: "mapa", name: "AdminMapa", component: AdminMapa },
       { path: "registrar", name: "AdminRegistrar", component: AdminRegistrar },
       { path: "perfil", name: "PerfilAdmin", component: PerfilAdminView },

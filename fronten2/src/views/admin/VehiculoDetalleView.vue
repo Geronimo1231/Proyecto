@@ -57,19 +57,19 @@
             <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div>
                 <dt class="text-sm font-medium text-gray-500">Matrícula</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.licensePlate }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.licensePlate || 'N/A' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Marca</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.brand }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.brand || 'N/A' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Modelo</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.model }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.model || 'N/A' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Año</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.year }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ vehicle.year || 'N/A' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Color</dt>
@@ -132,13 +132,13 @@
                         <p class="text-sm text-gray-500">
                           {{ assignment.isActive ? 'Asignado a' : 'Fue asignado a' }}
                           <span class="font-medium text-gray-900">
-                            {{ assignment.user?.firstName }} {{ assignment.user?.lastName }}
+                            {{ getUserName(assignment) }}
                           </span>
                         </p>
                         <p v-if="assignment.notes" class="mt-1 text-sm text-gray-500">{{ assignment.notes }}</p>
                       </div>
                       <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                        <time>{{ formatDate(assignment.assignmentDate) }}</time>
+                        <time>{{ formatDate(assignment.assignmentDate || assignment.createdAt) }}</time>
                         <p v-if="!assignment.isActive && assignment.unassignmentDate">
                           Hasta: {{ formatDate(assignment.unassignmentDate) }}
                         </p>
@@ -182,17 +182,17 @@
               <div class="flex-shrink-0">
                 <img
                   class="h-10 w-10 rounded-full"
-                  :src="currentAssignment.user?.photo || '/placeholder.svg?height=40&width=40'"
-                  :alt="currentAssignment.user?.firstName"
+                  :src="getUserPhoto(currentAssignment)"
+                  :alt="getUserName(currentAssignment)"
                 />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-900">
-                  {{ currentAssignment.user?.firstName }} {{ currentAssignment.user?.lastName }}
+                  {{ getUserName(currentAssignment) }}
                 </p>
-                <p class="text-sm text-gray-500">{{ currentAssignment.user?.email }}</p>
+                <p class="text-sm text-gray-500">{{ getUserEmail(currentAssignment) }}</p>
                 <p class="text-xs text-gray-400">
-                  Desde: {{ formatDate(currentAssignment.assignmentDate) }}
+                  Desde: {{ formatDate(currentAssignment.assignmentDate || currentAssignment.createdAt) }}
                 </p>
               </div>
             </div>
@@ -309,8 +309,6 @@ import {
 } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 
 const route = useRoute()
 const router = useRouter()
@@ -335,15 +333,33 @@ const currentAssignment = computed(() => {
 const fetchVehicleDetails = async () => {
   try {
     loading.value = true
-    const [vehicleRes, assignmentsRes, usersRes] = await Promise.all([
-      api.get(`/vehicles/${vehicleId}`),
-      api.get(`/assignments?vehicleId=${vehicleId}`),
-      api.get('/users?role=User')
-    ])
     
-    vehicle.value = vehicleRes.data.data
-    assignments.value = assignmentsRes.data.data || []
-    availableUsers.value = usersRes.data.data || []
+    // Cargar datos del vehículo
+    const vehicleResponse = await api.get(`/vehicles/${vehicleId}`)
+    if (vehicleResponse.data.success) {
+      vehicle.value = vehicleResponse.data.data
+    } else {
+      vehicle.value = vehicleResponse.data.data || vehicleResponse.data
+    }
+    
+    // Cargar asignaciones
+    try {
+      const assignmentsResponse = await api.get(`/assignments?vehicleId=${vehicleId}`)
+      assignments.value = assignmentsResponse.data.data || []
+    } catch (error) {
+      console.warn('Error loading assignments:', error)
+      assignments.value = []
+    }
+    
+    // Cargar usuarios disponibles
+    try {
+      const usersResponse = await api.get('/users?role=User&isActive=true')
+      availableUsers.value = usersResponse.data.data || []
+    } catch (error) {
+      console.warn('Error loading users:', error)
+      availableUsers.value = []
+    }
+    
   } catch (error) {
     console.error('Error al cargar detalles:', error)
     toast.error('Error al cargar los detalles del vehículo')
@@ -415,13 +431,49 @@ const getStatusText = (status) => {
     case 'assigned': return 'Asignado'
     case 'maintenance': return 'Mantenimiento'
     case 'out_of_service': return 'Fuera de Servicio'
-    default: return status
+    default: return status || 'Sin estado'
   }
+}
+
+// Helper functions para manejar diferentes estructuras de datos
+const getUserName = (assignment) => {
+  if (assignment.User) {
+    return `${assignment.User.firstName || ''} ${assignment.User.lastName || ''}`.trim()
+  }
+  if (assignment.user) {
+    return `${assignment.user.firstName || ''} ${assignment.user.lastName || ''}`.trim()
+  }
+  return 'Usuario no disponible'
+}
+
+const getUserEmail = (assignment) => {
+  if (assignment.User) {
+    return assignment.User.email || ''
+  }
+  if (assignment.user) {
+    return assignment.user.email || ''
+  }
+  return ''
+}
+
+const getUserPhoto = (assignment) => {
+  const photo = assignment.User?.photo || assignment.user?.photo
+  return photo || '/placeholder.svg?height=40&width=40'
 }
 
 const formatDate = (date) => {
   if (!date) return 'No disponible'
-  return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: es })
+  try {
+    return new Date(date).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    return 'Fecha inválida'
+  }
 }
 
 onMounted(() => {

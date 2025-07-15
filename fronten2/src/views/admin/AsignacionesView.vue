@@ -35,8 +35,8 @@
               @change="fetchAssignments"
             >
               <option value="">Todos</option>
-              <option value="active">Activas</option>
-              <option value="inactive">Inactivas</option>
+              <option value="true">Activas</option>
+              <option value="false">Inactivas</option>
             </select>
           </div>
           <div class="flex items-end">
@@ -75,6 +75,9 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-if="loading">
               <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                <div class="flex justify-center">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
                 Cargando asignaciones...
               </td>
             </tr>
@@ -89,30 +92,30 @@
                   <div class="flex-shrink-0 h-10 w-10">
                     <img
                       class="h-10 w-10 rounded-full object-cover"
-                      :src="assignment.user?.photo || '/placeholder.svg?height=40&width=40'"
-                      :alt="assignment.user?.firstName"
+                      :src="getUserPhoto(assignment)"
+                      :alt="getUserName(assignment)"
                     />
                   </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">
-                      {{ assignment.user?.firstName }} {{ assignment.user?.lastName }}
+                      {{ getUserName(assignment) }}
                     </div>
                     <div class="text-sm text-gray-500">
-                      {{ assignment.user?.email }}
+                      {{ getUserEmail(assignment) }}
                     </div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">
-                  {{ assignment.vehicle?.licensePlate }}
+                  {{ getVehiclePlate(assignment) }}
                 </div>
                 <div class="text-sm text-gray-500">
-                  {{ assignment.vehicle?.brand }} {{ assignment.vehicle?.model }}
+                  {{ getVehicleInfo(assignment) }}
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ formatDate(assignment.assignmentDate) }}
+                {{ formatDate(assignment.assignmentDate || assignment.createdAt) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
@@ -127,12 +130,12 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button
-                  @click="viewAssignment(assignment)"
-                  class="text-blue-600 hover:text-blue-900"
-                >
-                  Ver
-                </button>
+                <router-link
+                to="/admin/asignaciones/detalle"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              
+                Detalles
+              </router-link>
                 <button
                   v-if="assignment.isActive"
                   @click="deactivateAssignment(assignment)"
@@ -197,10 +200,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAssignmentsStore } from '@/stores/assignments'
+import api from '../../services/api'
 import { toast } from 'vue3-toastify'
+import { useRouter } from 'vue-router'
 
-const assignmentsStore = useAssignmentsStore()
+const router = useRouter()
 
 const loading = ref(false)
 const assignments = ref([])
@@ -241,22 +245,33 @@ const fetchAssignments = async () => {
   try {
     loading.value = true
     
-    const params = {
+    const params = new URLSearchParams({
       page: pagination.value.page,
-      limit: pagination.value.limit,
-      search: filters.value.search,
-      status: filters.value.status
+      limit: pagination.value.limit
+    })
+
+    if (filters.value.search) {
+      params.append('search', filters.value.search)
+    }
+    
+    if (filters.value.status) {
+      params.append('isActive', filters.value.status)
     }
 
-    const response = await assignmentsStore.fetchAssignments(params)
+    const response = await api.get(`/assignments?${params.toString()}`)
     
-    if (response?.success) {
-      assignments.value = response.data.assignments || []
-      pagination.value = response.data.pagination || pagination.value
+    if (response.data.success) {
+      assignments.value = response.data.data || []
+      if (response.data.pagination) {
+        pagination.value = response.data.pagination
+      }
+    } else {
+      assignments.value = response.data.data || []
     }
   } catch (error) {
     console.error('Error fetching assignments:', error)
     toast.error('Error al cargar las asignaciones')
+    assignments.value = []
   } finally {
     loading.value = false
   }
@@ -279,19 +294,18 @@ const clearFilters = () => {
 }
 
 const viewAssignment = (assignment) => {
-  // Implementar vista de detalle
-  console.log('Ver asignación:', assignment)
+  router.push(`/admin/asignaciones/${assignment.id}`)
 }
 
 const deactivateAssignment = async (assignment) => {
   if (confirm('¿Estás seguro de que deseas desactivar esta asignación?')) {
     try {
-      const result = await assignmentsStore.deactivateAssignment(assignment.id)
-      if (result?.success) {
-        await fetchAssignments()
-      }
+      await api.patch(`/assignments/${assignment.id}/deactivate`)
+      toast.success('Asignación desactivada correctamente')
+      await fetchAssignments()
     } catch (error) {
       console.error('Error deactivating assignment:', error)
+      toast.error('Error al desactivar la asignación')
     }
   }
 }
@@ -299,25 +313,75 @@ const deactivateAssignment = async (assignment) => {
 const deleteAssignment = async (assignment) => {
   if (confirm('¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.')) {
     try {
-      const result = await assignmentsStore.deleteAssignment(assignment.id)
-      if (result?.success) {
-        await fetchAssignments()
-      }
+      await api.delete(`/assignments/${assignment.id}`)
+      toast.success('Asignación eliminada correctamente')
+      await fetchAssignments()
     } catch (error) {
       console.error('Error deleting assignment:', error)
+      toast.error('Error al eliminar la asignación')
     }
   }
 }
 
+// Helper functions para manejar diferentes estructuras de datos
+const getUserName = (assignment) => {
+  if (assignment.User) {
+    return `${assignment.User.firstName || ''} ${assignment.User.lastName || ''}`.trim()
+  }
+  if (assignment.user) {
+    return `${assignment.user.firstName || ''} ${assignment.user.lastName || ''}`.trim()
+  }
+  return 'Usuario no disponible'
+}
+
+const getUserEmail = (assignment) => {
+  if (assignment.User) {
+    return assignment.User.email || ''
+  }
+  if (assignment.user) {
+    return assignment.user.email || ''
+  }
+  return ''
+}
+
+const getUserPhoto = (assignment) => {
+  const photo = assignment.User?.photo || assignment.user?.photo
+  return photo || '/placeholder.svg?height=40&width=40'
+}
+
+const getVehiclePlate = (assignment) => {
+  if (assignment.Vehicle) {
+    return assignment.Vehicle.licensePlate || 'N/A'
+  }
+  if (assignment.vehicle) {
+    return assignment.vehicle.licensePlate || 'N/A'
+  }
+  return 'Vehículo no disponible'
+}
+
+const getVehicleInfo = (assignment) => {
+  if (assignment.Vehicle) {
+    return `${assignment.Vehicle.brand || ''} ${assignment.Vehicle.model || ''}`.trim()
+  }
+  if (assignment.vehicle) {
+    return `${assignment.vehicle.brand || ''} ${assignment.vehicle.model || ''}`.trim()
+  }
+  return ''
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  try {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    return '-'
+  }
 }
 
 onMounted(() => {

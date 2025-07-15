@@ -113,12 +113,12 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-              <button
-                @click="editUser(usuario)"
+              <router-link
+                :to="`/admin/usuarios/editar/${usuario.id}`"
                 class="text-blue-600 hover:text-blue-900"
               >
                 Editar
-              </button>
+              </router-link>
               <button
                 @click="toggleUserStatus(usuario)"
                 :class="usuario.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
@@ -129,94 +129,6 @@
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <!-- Edit User Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-        
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="saveUser">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg font-medium text-gray-900 mb-4">Editar Usuario</h3>
-              
-              <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                    <input
-                      v-model="userForm.firstName"
-                      type="text"
-                      required
-                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
-                    <input
-                      v-model="userForm.lastName"
-                      type="text"
-                      required
-                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                  <input
-                    v-model="userForm.email"
-                    type="email"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                  <input
-                    v-model="userForm.phone"
-                    type="tel"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
-                  <select
-                    v-model="userForm.role"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  >
-                    <option value="">Seleccionar rol</option>
-                    <option value="Admin">Administrador</option>
-                    <option value="User">Usuario</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-              <button
-                type="submit"
-                :disabled="loading"
-                class="w-full inline-flex justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:opacity-50"
-              >
-                {{ loading ? 'Guardando...' : 'Guardar' }}
-              </button>
-              <button
-                type="button"
-                @click="closeModal"
-                class="mt-3 w-full inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -229,20 +141,10 @@ import { toast } from 'vue3-toastify'
 
 const users = ref([])
 const loading = ref(false)
-const showEditModal = ref(false)
 
 const filters = ref({
   search: '',
   rol: ''
-})
-
-const userForm = ref({
-  id: null,
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  role: ''
 })
 
 const filteredUsers = computed(() => {
@@ -271,27 +173,6 @@ const fetchData = async () => {
   }
 }
 
-const saveUser = async () => {
-  try {
-    loading.value = true
-    
-    await api.put(`/users/${userForm.value.id}`, userForm.value)
-    toast.success('Usuario actualizado correctamente')
-    
-    await fetchData()
-    closeModal()
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Error al guardar el usuario')
-  } finally {
-    loading.value = false
-  }
-}
-
-const editUser = (usuario) => {
-  userForm.value = { ...usuario }
-  showEditModal.value = true
-}
-
 const toggleUserStatus = async (usuario) => {
     const action = usuario.isActive ? 'desactivar' : 'activar'
     if (confirm(`¿Estás seguro de ${action} este usuario?`)) {
@@ -305,18 +186,6 @@ const toggleUserStatus = async (usuario) => {
         toast.error('Error al cambiar el estado del usuario')
       })
     }
-}
-
-const closeModal = () => {
-  showEditModal.value = false
-  userForm.value = {
-    id: null,
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: ''
-  }
 }
 
 const resetFilters = () => {
