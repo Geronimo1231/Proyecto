@@ -2,16 +2,21 @@ import { Vehicle, User, Assignment } from "../models/index.js"
 import pkg from "../config/config.cjs"
 const { logger } = pkg
 import { Op } from "sequelize"
+import { error } from "console"
 
 // Función para manejar errores
 const handleError = (res, error, context) => {
   logger.error(`Error en ${context}:`, error)
+
+  const errorMessage = error && (error.message || error.toString()) || "Unknown error"
+
   res.status(400).json({
     success: false,
     message: "Error interno del servidor",
-    error: error.message || "Unknown error",
+    error: errorMessage,
   })
 }
+
 
 export const getAllVehicles = async (req, res) => {
   try {
@@ -149,9 +154,15 @@ export const createVehicle = async (req, res) => {
 }
 
 export const updateVehicle = async (req, res) => {
+console.log("entre a la funcion------")
+console.log(req.body)
+
   try {
     const { id } = req.params
-    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, status } = req.body
+    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, status , image } = req.body
+
+console.log("imagen-------")
+console.log(image)
 
     const vehicle = await Vehicle.findByPk(id)
     if (!vehicle) {
@@ -184,55 +195,55 @@ export const updateVehicle = async (req, res) => {
       engineNumber: engineNumber || vehicle.engineNumber,
       chassisNumber: chassisNumber || vehicle.chassisNumber,
       status: status || vehicle.status,
+      image: image || vehicle.image,
     })
 
-    logger.info(`Vehículo actualizado: ${vehicle.licensePlate}`)
-
-    res.json({
+     res.status(200).json({
       success: true,
       message: "Vehículo actualizado correctamente",
       data: vehicle,
     })
   } catch (error) {
+    console.log("error----")
+    console.log(error)
     handleError(res, error, 'updateVehicle')
   }
 }
 
 export const deleteVehicle = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
-    const vehicle = await Vehicle.findByPk(id)
+    const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Vehículo no encontrado",
-      })
+      });
     }
 
     const activeAssignments = await Assignment.count({
       where: { vehicleId: id, isActive: true },
-    })
+    });
 
     if (activeAssignments > 0) {
       return res.status(400).json({
         success: false,
         message: "No se puede eliminar un vehículo con asignaciones activas",
-      })
+      });
     }
 
-    await vehicle.destroy()
-
-    logger.info(`Vehículo eliminado: ${vehicle.licensePlate}`)
-
-    res.json({
+      await vehicle.destroy();
+    
+     res.status(200).json({
       success: true,
       message: "Vehículo eliminado correctamente",
-    })
+    });
   } catch (error) {
-    handleError(res, error, 'deleteVehicle')
+    handleError(res, error, 'deleteVehicle');
   }
 }
+
 
 export const getAvailableVehicles = async (req, res) => {
   try {

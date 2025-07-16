@@ -65,14 +65,7 @@ const Vehicle = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    /*anotherAssignedUserId: { // Clave foránea diferente para la otra relación
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: "Users",
-        key: "id",
-      },
-    },*/
+
   },
   {
     tableName: "Vehicles",
@@ -84,7 +77,5 @@ const Vehicle = sequelize.define(
 Vehicle.belongsTo(User, { foreignKey: "assignedTo", as: "assignedUser" }); 
 User.hasMany(Vehicle, { foreignKey: "assignedTo", as: "userAssignedVehicles" }); 
 
-// Nueva relación para el "otro" usuario asignado
-//Vehicle.belongsTo(User, { foreignKey: "anotherAssignedUserId", as: "anotherAssignedUser" });
 
 export default Vehicle;

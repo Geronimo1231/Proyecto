@@ -341,12 +341,15 @@ const updateVehicle = async () => {
     if (fileInput.value?.files[0]) {
       formData.append('image', fileInput.value.files[0])
     }
+
     
-    const response = await api.put(`/vehicles/${vehicleId}`, formData, {
+    const response = await api.put(`/vehicles/${vehicleId}`, formData
+    /*{
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    })
+    }*/
+  )
     
     if (response.data.success || response.status === 200) {
       toast.success('Vehículo actualizado correctamente')

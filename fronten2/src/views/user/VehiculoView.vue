@@ -98,12 +98,6 @@
             >
               Ver en Mapa
             </router-link>
-            <button
-              @click="viewVehicleDetails(vehiculo)"
-              class="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 transition duration-200"
-            >
-              Ver Detalles
-            </button>
           </div>
         </div>
       </div>

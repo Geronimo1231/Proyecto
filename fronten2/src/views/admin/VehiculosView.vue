@@ -97,12 +97,6 @@
             >
               Editar
             </router-link>
-            <router-link
-              :to="`/admin/vehiculos/${vehiculo.id}`"
-              class="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 text-center"
-            >
-              Ver Detalles
-            </router-link>
             <button
               @click="deleteVehicle(vehiculo)"
               class="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700"
