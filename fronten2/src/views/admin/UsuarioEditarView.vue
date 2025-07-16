@@ -312,11 +312,9 @@ const updateUser = async () => {
       formData.append('photo', fileInput.value.files[0])
     }
     
-    const response = await api.put(`/users/${userId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await api.put(`/users/${userId}`, formData, 
+    
+  )
     
     if (response.data.success || response.status === 200) {
       toast.success('Usuario actualizado correctamente')

@@ -344,11 +344,7 @@ const updateVehicle = async () => {
 
     
     const response = await api.put(`/vehicles/${vehicleId}`, formData
-    /*{
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }*/
+  
   )
     
     if (response.data.success || response.status === 200) {
