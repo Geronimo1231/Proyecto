@@ -124,12 +124,20 @@ export const createUser = async (req, res) => {
       })
     }
 
+    // Validar que la contraseña tenga al menos 8 caracteres
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "La contraseña debe tener al menos 8 caracteres",
+      })
+    }
+
     const user = await User.create({
       firstName,
       lastName,
       email,
       phone,
-      password,
+      password, // El hook beforeCreate se encargará de hashearla
       role: role || "User",
       photo: photo || "/placeholder.svg?height=100&width=100",
       isActive: true,
@@ -139,7 +147,9 @@ export const createUser = async (req, res) => {
     const userResponse = user.toJSON()
     delete userResponse.password
 
-    res.status(200).json({
+    logger.info(`Usuario creado: ${user.email}`)
+
+    res.status(201).json({
       success: true,
       message: "Usuario creado correctamente",
       data: userResponse,
@@ -200,10 +210,8 @@ export const updateUser = async (req, res) => {
     // Remover password de la respuesta
     const userResponse = user.toJSON()
     delete userResponse.password
-
-    logger.info(`Usuario actualizado: ${user.email}`)
-
-    res.json({
+    
+   res.status(200).json({
       success: true,
       message: "Usuario actualizado correctamente",
       data: userResponse,
@@ -244,9 +252,8 @@ export const deleteUser = async (req, res) => {
 
     await user.destroy()
 
-    logger.info(`Usuario eliminado: ${user.email}`)
-
-    res.json({
+    
+    res.status(200).json({
       success: true,
       message: "Usuario eliminado correctamente",
     })
@@ -276,8 +283,7 @@ export const toggleUserStatus = async (req, res) => {
       isActive: !user.isActive,
     })
 
-  
-   res.status(200).json({
+    res.status(200).json({
       success: true,
       message: `Usuario ${user.isActive ? "activado" : "desactivado"} correctamente`,
       data: {
@@ -426,6 +432,33 @@ export const getUserStats = async (req, res) => {
     })
   } catch (error) {
     logger.error("Error en getUserStats:", error)
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+export const getAvailableUsers = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      where: {
+        role: "User",
+        isActive: true,
+      },
+      attributes: ["id", "firstName", "lastName", "email"],
+      order: [
+        ["firstName", "ASC"],
+        ["lastName", "ASC"],
+      ],
+    })
+
+    res.json({
+      success: true,
+      data: users,
+    })
+  } catch (error) {
+    logger.error("Error en getAvailableUsers:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",

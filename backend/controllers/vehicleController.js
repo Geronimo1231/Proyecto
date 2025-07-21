@@ -154,16 +154,23 @@ export const createVehicle = async (req, res) => {
 }
 
 export const updateVehicle = async (req, res) => {
-console.log("entre a la funcion------")
-console.log(req.body)
-
   try {
     const { id } = req.params
-    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, status , image } = req.body
+    const {
+      licensePlate,
+      model,
+      brand,
+      year,
+      type,
+      color,
+      mileage,
+      engineNumber,
+      chassisNumber,
+      status,
+      image,
+    } = req.body
 
-console.log("imagen-------")
-console.log(image)
-
+    // Fetch vehicle first
     const vehicle = await Vehicle.findByPk(id)
     if (!vehicle) {
       return res.status(400).json({
@@ -172,6 +179,7 @@ console.log(image)
       })
     }
 
+    // Check if licensePlate is changing and if it already exists
     if (licensePlate && licensePlate !== vehicle.licensePlate) {
       const existingVehicle = await Vehicle.findOne({
         where: { licensePlate, id: { [Op.ne]: id } },
@@ -184,6 +192,15 @@ console.log(image)
       }
     }
 
+    // Handle image update (allow clearing image with empty string)
+    let newImage
+    if (typeof image === "string") {
+      newImage = image.trim() === "" ? null : image
+    } else {
+      newImage = vehicle.image
+    }
+
+    // Update vehicle with new values or keep old ones if undefined
     await vehicle.update({
       licensePlate: licensePlate || vehicle.licensePlate,
       model: model || vehicle.model,
@@ -195,10 +212,10 @@ console.log(image)
       engineNumber: engineNumber || vehicle.engineNumber,
       chassisNumber: chassisNumber || vehicle.chassisNumber,
       status: status || vehicle.status,
-      image: image || vehicle.image,
+      image: newImage,
     })
 
-     res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Vehículo actualizado correctamente",
       data: vehicle,
@@ -206,7 +223,7 @@ console.log(image)
   } catch (error) {
     console.log("error----")
     console.log(error)
-    handleError(res, error, 'updateVehicle')
+    handleError(res, error, "updateVehicle")
   }
 }
 

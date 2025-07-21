@@ -174,6 +174,7 @@
           </div>
         </div>
 
+        
         <!-- Asignación Actual -->
         <div v-if="currentAssignment" class="bg-white shadow rounded-lg">
           <div class="px-4 py-5 sm:p-6">

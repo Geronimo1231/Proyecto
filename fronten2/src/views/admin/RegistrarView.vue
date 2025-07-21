@@ -20,11 +20,22 @@
           <h3 class="text-lg font-medium text-gray-900 mb-4">Registrar Nuevo Usuario</h3>
           
           <form @submit.prevent="registerUser" class="space-y-4">
+            <!-- Foto de perfil -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Foto de perfil</label>
+              <ImageUploader
+                v-model="userForm.photo"
+                alt="Foto de perfil"
+                :storage-key="`user-photo-${Date.now()}`"
+                @uploaded="onUserPhotoUploaded"
+              />
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                 <input
-                  v-model="userForm.nombre"
+                  v-model="userForm.firstName"
                   type="text"
                   required
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -33,7 +44,7 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
                 <input
-                  v-model="userForm.apellido"
+                  v-model="userForm.lastName"
                   type="text"
                   required
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -54,7 +65,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
               <input
-                v-model="userForm.telefono"
+                v-model="userForm.phone"
                 type="tel"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
@@ -70,21 +81,20 @@
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
               <p class="mt-1 text-xs text-gray-500">
-                Mínimo 8 caracteres, incluir mayúscula, minúscula, número y carácter especial
+                Mínimo 8 caracteres
               </p>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
               <select
-                v-model="userForm.rol_id"
+                v-model="userForm.role"
                 required
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               >
                 <option value="">Seleccionar rol</option>
-                <option v-for="rol in roles" :key="rol.id" :value="rol.id">
-                  {{ rol.nombre === 'Admin' ? 'Administrador' : 'Usuario' }}
-                </option>
+                <option value="Admin">Administrador</option>
+                <option value="User">Usuario</option>
               </select>
             </div>
             
@@ -108,7 +118,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Matrícula *</label>
               <input
-                v-model="vehicleForm.matricula"
+                v-model="vehicleForm.licensePlate"
                 type="text"
                 required
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -118,38 +128,8 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Marca *</label>
-                <select
-                  v-model="vehicleForm.marca_id"
-                  required
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Seleccionar marca</option>
-                  <option v-for="marca in marcas" :key="marca.id" :value="marca.id">
-                    {{ marca.nombre }}
-                  </option>
-                </select>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                <select
-                  v-model="vehicleForm.tipo_vehiculo_id"
-                  required
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Seleccionar tipo</option>
-                  <option v-for="tipo in tiposvehicle" :key="tipo.id" :value="tipo.id">
-                    {{ tipo.nombre }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Modelo *</label>
                 <input
-                  v-model="vehicleForm.modelo"
+                  v-model="vehicleForm.brand"
                   type="text"
                   required
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -157,9 +137,21 @@
               </div>
               
               <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Modelo *</label>
+                <input
+                  v-model="vehicleForm.model"
+                  type="text"
+                  required
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Año *</label>
                 <input
-                  v-model="vehicleForm.año"
+                  v-model="vehicleForm.year"
                   type="number"
                   min="1900"
                   max="2025"
@@ -167,24 +159,12 @@
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
+              
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
                 <input
                   v-model="vehicleForm.color"
                   type="text"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Kilometraje</label>
-                <input
-                  v-model="vehicleForm.kilometraje"
-                  type="number"
-                  min="0"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
@@ -211,13 +191,13 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
             <select
-              v-model="assignForm.usuario_id"
+              v-model="assignForm.userId"
               required
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Seleccionar usuario</option>
               <option v-for="usuario in usersDisponibles" :key="usuario.id" :value="usuario.id">
-                {{ usuario.nombre }} {{ usuario.apellido }}
+                {{ usuario.firstName }} {{ usuario.lastName }}
               </option>
             </select>
           </div>
@@ -225,13 +205,13 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Vehículo</label>
             <select
-              v-model="assignForm.vehiculo_id"
+              v-model="assignForm.vehicleId"
               required
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Seleccionar vehículo</option>
               <option v-for="vehiculo in vehicleDisponibles" :key="vehiculo.id" :value="vehiculo.id">
-                {{ vehiculo.matricula }} - {{ vehiculo.modelo }}
+                {{ vehiculo.licensePlate }} - {{ vehiculo.model }}
               </option>
             </select>
           </div>
@@ -284,14 +264,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { PlusIcon, TruckIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
+import ImageUploader from '../../components/ImageUploader.vue'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-const roles = ref([])
-const marcas = ref([])
-const tiposvehicle = ref([])
 const usersDisponibles = ref([])
 const vehicleDisponibles = ref([])
 const recentActivity = ref([])
@@ -301,44 +279,37 @@ const vehicleLoading = ref(false)
 const assignLoading = ref(false)
 
 const userForm = ref({
-  nombre: '',
-  apellido: '',
+  firstName: '',
+  lastName: '',
   email: '',
-  telefono: '',
+  phone: '',
   password: '',
-  rol_id: ''
+  role: '',
+  photo: ''
 })
 
 const vehicleForm = ref({
-  matricula: '',
-  marca_id: '',
-  modelo: '',
-  año: new Date().getFullYear(),
-  color: '',
-  tipo_vehiculo_id: '',
-  kilometraje: 0
+  licensePlate: '',
+  brand: '',
+  model: '',
+  year: new Date().getFullYear(),
+  color: ''
 })
 
 const assignForm = ref({
-  usuario_id: '',
-  vehiculo_id: ''
+  userId: '',
+  vehicleId: ''
 })
 
 const fetchData = async () => {
   try {
-    const [rolesRes, marcasRes, tiposRes, usersRes, vehiclesRes, activityRes] = await Promise.all([
-      api.get('/roles'),
-      api.get('/brands'),
-      api.get('/vehicles-types'),
+    const [usersRes, vehiclesRes, activityRes] = await Promise.all([
       api.get('/users?role=User'),
       api.get('/vehicles?status=available'),
       api.get('/dashboard/activity?limit=10')
     ])
     
-    roles.value = rolesRes.data.data || []
-    marcas.value = marcasRes.data.data || []
-    tiposvehicle.value = tiposRes.data.data || [] // Corrected variable name
-    usersDisponibles.value = usersRes.data.data || []
+    usersDisponibles.value = usersRes.data.data?.users || usersRes.data.data || []
     vehicleDisponibles.value = vehiclesRes.data.vehicles || vehiclesRes.data.data || []
     recentActivity.value = activityRes.data.data || []
   } catch (error) {
@@ -347,24 +318,41 @@ const fetchData = async () => {
   }
 }
 
+const onUserPhotoUploaded = (imageData) => {
+  console.log('Foto subida:', imageData)
+}
+
 const registerUser = async () => {
   try {
     userLoading.value = true
-    await api.post('/users', userForm.value)
+    
+    const userData = {
+      firstName: userForm.value.firstName,
+      lastName: userForm.value.lastName,
+      email: userForm.value.email,
+      phone: userForm.value.phone,
+      password: userForm.value.password,
+      role: userForm.value.role,
+      photo: userForm.value.photo || '/placeholder.svg?height=100&width=100'
+    }
+    
+    await api.post('/users', userData)
     toast.success('Usuario registrado correctamente')
     
     // Reset form
     userForm.value = {
-      nombre: '',
-      apellido: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      telefono: '',
+      phone: '',
       password: '',
-      rol_id: ''
+      role: '',
+      photo: ''
     }
     
     await fetchData()
   } catch (error) {
+    console.error('Error al registrar usuario:', error)
     toast.error(error.response?.data?.message || 'Error al registrar el usuario')
   } finally {
     userLoading.value = false
@@ -379,13 +367,11 @@ const registerVehicle = async () => {
     
     // Reset form
     vehicleForm.value = {
-      matricula: '',
-      marca_id: '',
-      modelo: '',
-      año: new Date().getFullYear(),
-      color: '',
-      tipo_vehiculo_id: '',
-      kilometraje: 0
+      licensePlate: '',
+      brand: '',
+      model: '',
+      year: new Date().getFullYear(),
+      color: ''
     }
     
     await fetchData()
@@ -404,8 +390,8 @@ const quickAssign = async () => {
     
     // Reset form
     assignForm.value = {
-      usuario_id: '',
-      vehiculo_id: ''
+      userId: '',
+      vehicleId: ''
     }
     
     await fetchData()

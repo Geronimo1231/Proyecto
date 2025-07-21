@@ -14,7 +14,7 @@ export const login = async (req, res) => {
       })
     }
 
-    console.log({user})
+    console.log({ user })
 
     const isValidPassword = await bcrypt.compare(password, user.password)
     if (!isValidPassword) {
@@ -56,6 +56,31 @@ export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password, role = "User" } = req.body
 
+    // Validar que todos los campos requeridos estén presentes
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Todos los campos son requeridos",
+      })
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Formato de email inválido",
+      })
+    }
+
+    // Validar contraseña
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "La contraseña debe tener al menos 8 caracteres",
+      })
+    }
+
     const existingUser = await User.findOne({ where: { email } })
     if (existingUser) {
       return res.status(400).json({
@@ -64,15 +89,14 @@ export const register = async (req, res) => {
       })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12)
-
     const user = await User.create({
       firstName,
       lastName,
       email,
       phone,
-      password: hashedPassword,
+      password, // El hook beforeCreate se encargará de hashearla
       role,
+      isActive: true,
     })
 
     const userData = {

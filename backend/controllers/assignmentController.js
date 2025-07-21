@@ -106,75 +106,47 @@ export const getAssignmentById = async (req, res) => {
   }
 }
 
+import { sequelize } from "../models/index.js" // asumiendo que exportas sequelize
+
 export const createAssignment = async (req, res) => {
+  const t = await sequelize.transaction()
   try {
     const { userId, vehicleId, notes } = req.body
 
-    // Verificar que el usuario existe
-    const user = await User.findByPk(userId)
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Usuario no encontrado",
-      })
-    }
+    // Validaciones...
+    const user = await User.findByPk(userId, { transaction: t })
+    if (!user) throw new Error("Usuario no encontrado")
 
-    // Verificar que el vehículo existe y está disponible
-    const vehicle = await Vehicle.findByPk(vehicleId)
-    if (!vehicle) {
-      return res.status(400).json({
-        success: false,
-        message: "Vehículo no encontrado",
-      })
-    }
+    const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t })
+    if (!vehicle) throw new Error("Vehículo no encontrado")
+    if (vehicle.status !== "available") throw new Error("Vehículo no disponible")
 
-    if (vehicle.status !== "available") {
-      return res.status(400).json({
-        success: false,
-        message: "El vehículo no está disponible para asignación",
-      })
-    }
-
-    // Verificar que el usuario no tenga asignaciones activas
     const activeAssignment = await Assignment.findOne({
       where: { userId, isActive: true },
+      transaction: t,
     })
+    if (activeAssignment) throw new Error("Usuario ya tiene asignación activa")
 
-    if (activeAssignment) {
-      return res.status(400).json({
-        success: false,
-        message: "El usuario ya tiene una asignación activa",
-      })
-    }
-
-    // Crear la asignación
     const assignment = await Assignment.create({
       userId,
       vehicleId,
       notes,
       assignmentDate: new Date(),
       isActive: true,
-    })
+    }, { transaction: t })
 
-    // Actualizar el estado del vehículo
     await vehicle.update({
       status: "assigned",
       assignedTo: userId,
-    })
+    }, { transaction: t })
 
-    // Obtener la asignación completa con relaciones
+    await t.commit()
+
+    // Buscar con relaciones fuera de la transacción está OK
     const newAssignment = await Assignment.findByPk(assignment.id, {
       include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        {
-          model: Vehicle,
-          as: "vehicle",
-          attributes: ["id", "licensePlate", "model", "brand"],
-        },
+        { model: User, as: "user", attributes: ["id", "firstName", "lastName", "email"] },
+        { model: Vehicle, as: "vehicle", attributes: ["id", "licensePlate", "model", "brand"] },
       ],
     })
 
@@ -186,14 +158,55 @@ export const createAssignment = async (req, res) => {
       data: newAssignment,
     })
   } catch (error) {
+    await t.rollback()
     logger.error("Error en createAssignment:", error)
     res.status(400).json({
+      success: false,
+      message: error.message || "Error interno del servidor",
+    })
+  }
+}
+
+export const getAvailableUsersForAssignment = async (req, res) => {
+  try {
+    // Obtener IDs de usuarios que tienen asignaciones activas
+    const activeAssignments = await Assignment.findAll({
+      where: { isActive: true },
+      attributes: ['userId'],
+      group: ['userId'],
+    })
+
+    const activeUserIds = activeAssignments.map(a => a.userId)
+
+    // Traer usuarios activos con rol 'User' que NO estén en activeUserIds
+    const users = await User.findAll({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        role: 'User',
+        id: {
+          [Op.notIn]: activeUserIds.length > 0 ? activeUserIds : [0], // Si no hay usuarios activos, evitar error con id NOT IN [0]
+        },
+      },
+      order: [['firstName', 'ASC']],
+      attributes: ['id', 'firstName', 'lastName', 'email'],
+    })
+
+    res.status(200).json({
+      success: true,
+      data: users,
+    })
+  } catch (error) {
+    logger.error("Error en getAvailableUsersForAssignment:", error)
+    res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
     })
   }
 }
+
+
 
 export const updateAssignment = async (req, res) => {
   try {

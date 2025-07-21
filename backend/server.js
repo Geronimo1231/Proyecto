@@ -3,11 +3,17 @@ import cors from "cors"
 import dotenv from "dotenv"
 import sequelize from "./config/database.js"  
 import "./models/index.js"
+import path from "path"
 
 
 
 import configFile from "./config/config.cjs"
+import { requestLogger } from "./middleware/requestLogger.js"
 const appConfig = configFile.app
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 console.log("JWT SECRET:", appConfig.jwt.secret)
 
@@ -22,6 +28,7 @@ const PORT = process.env.PORT || 8080
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use("/upload", express.static(path.join(__dirname, "uploads")))
 
 // Rutas
 import authRoutes from "./routes/auth.js"
@@ -33,6 +40,7 @@ import gpsRoutes from "./routes/gps.js"
 import brandRoutes from "./routes/brands.js"
 import roleRoutes from "./routes/roles.js"
 import vehicleTypeRoutes from "./routes/vehicles-types.js"
+import uploadRoutes from "./routes/upload.js"
 
 
 
@@ -45,6 +53,7 @@ app.use("/api/gps", gpsRoutes)
 app.use("/api/brands", brandRoutes)
 app.use("/api/roles", roleRoutes)
 app.use("/api/vehicles-types", vehicleTypeRoutes)
+app.use("/api/upload", uploadRoutes)
 
 let socket;
 
