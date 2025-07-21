@@ -37,7 +37,7 @@ export const login = async (req, res) => {
       isActive: user.isActive,
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Inicio de sesión exitoso",
       token,
@@ -110,7 +110,7 @@ export const register = async (req, res) => {
       isActive: user.isActive,
     }
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Usuario registrado exitosamente",
       user: userData,

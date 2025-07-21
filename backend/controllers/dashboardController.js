@@ -65,7 +65,7 @@ export const getAdminDashboard = async (req, res) => {
       },
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: dashboardData,
     })
@@ -110,7 +110,7 @@ export const getUserActivity = async (req, res) => {
       isActive: assignment.isActive,
     }))
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: activity,
     })
@@ -157,7 +157,7 @@ export const getSystemStats = async (req, res) => {
       },
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: stats,
     })

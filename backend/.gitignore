@@ -1,5 +1,7 @@
 # Ignora la carpeta node_modules
 node_modules
+uplouds
+photos
 
 # Ignora los archivos relacionados a API keys
 .env

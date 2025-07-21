@@ -56,9 +56,7 @@ export const uploadImage = async (req, res) => {
 
     const imageUrl = `/uploads/${req.file.filename}`
 
-    logger.info(`Imagen subida: ${req.file.filename}`)
-
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Imagen subida correctamente",
       data: {
@@ -87,7 +85,7 @@ export const deleteImage = async (req, res) => {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath)
       logger.info(`Imagen eliminada: ${filename}`)
-      res.json({
+      res.status(200).json({
         success: true,
         message: "Imagen eliminada correctamente",
       })

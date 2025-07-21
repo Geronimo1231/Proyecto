@@ -95,7 +95,7 @@ export const getUserDashboard = async (req, res) => {
       assignedVehicles: user.assignments || [],
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: dashboardData,
     })
@@ -159,9 +159,8 @@ export const updateUserProfile = async (req, res) => {
       attributes: { exclude: ["password"] },
     })
 
-    logger.info(`Perfil actualizado para usuario ${user.email}`)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Perfil actualizado correctamente",
       data: updatedUser,

@@ -26,9 +26,8 @@ export const createGpsLocation = async (req, res) => {
       gpsTimestamp: new Date(),
     })
 
-    logger.info(`Nueva ubicación GPS creada para vehículo ${vehicleId}`)
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Ubicación GPS registrada correctamente",
       data: gpsLocation,
@@ -77,7 +76,7 @@ export const getVehicleLocations = async (req, res) => {
       limit: Number.parseInt(limit),
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: locations,
     })
@@ -114,7 +113,7 @@ export const getLatestVehicleLocation = async (req, res) => {
       })
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: location,
     })
@@ -170,7 +169,7 @@ export const getAllVehicleLocations = async (req, res) => {
       })
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: locations,
     })
@@ -242,7 +241,7 @@ export const getUserVehicleLocations = async (req, res) => {
       })
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: locations,
     })
@@ -269,9 +268,8 @@ export const deleteOldLocations = async (req, res) => {
       },
     })
 
-    logger.info(`Eliminadas ${deletedCount} ubicaciones GPS antiguas`)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: `Se eliminaron ${deletedCount} ubicaciones GPS anteriores a ${days} días`,
       deletedCount,
@@ -331,9 +329,7 @@ export const bulkCreateGpsLocations = async (req, res) => {
       })),
     )
 
-    logger.info(`Se crearon ${created.length} ubicaciones GPS en bulk`)
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: `Se crearon ${created.length} ubicaciones GPS correctamente.`,
       data: created,

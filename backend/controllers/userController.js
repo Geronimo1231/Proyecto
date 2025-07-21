@@ -45,7 +45,7 @@ export const getAllUsers = async (req, res) => {
       order: [["createdAt", "DESC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         users,
@@ -97,7 +97,7 @@ export const getUserById = async (req, res) => {
       })
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: user,
     })
@@ -147,9 +147,9 @@ export const createUser = async (req, res) => {
     const userResponse = user.toJSON()
     delete userResponse.password
 
-    logger.info(`Usuario creado: ${user.email}`)
+    
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Usuario creado correctamente",
       data: userResponse,
@@ -210,7 +210,7 @@ export const updateUser = async (req, res) => {
     // Remover password de la respuesta
     const userResponse = user.toJSON()
     delete userResponse.password
-    
+
    res.status(200).json({
       success: true,
       message: "Usuario actualizado correctamente",
@@ -311,7 +311,7 @@ export const getUsersByRole = async (req, res) => {
       order: [["firstName", "ASC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: users,
     })
@@ -340,9 +340,8 @@ export const updateUserPhoto = async (req, res) => {
 
     await user.update({ photo })
 
-    logger.info(`Foto de usuario actualizada: ${user.email}`)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Foto actualizada correctamente",
       data: {
@@ -384,9 +383,8 @@ export const changePassword = async (req, res) => {
 
     await user.update({ password: newPassword })
 
-    logger.info(`Password cambiado para usuario: ${user.email}`)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Password actualizado correctamente",
     })
@@ -426,7 +424,7 @@ export const getUserStats = async (req, res) => {
       withAssignments: usersWithAssignments,
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: stats,
     })
@@ -453,7 +451,7 @@ export const getAvailableUsers = async (req, res) => {
       ],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: users,
     })

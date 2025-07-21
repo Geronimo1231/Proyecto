@@ -150,8 +150,6 @@ export const createAssignment = async (req, res) => {
       ],
     })
 
-    logger.info(`Asignación creada: Usuario ${userId} - Vehículo ${vehicleId}`)
-
     res.status(200).json({
       success: true,
       message: "Asignación creada correctamente",
@@ -238,9 +236,9 @@ export const updateAssignment = async (req, res) => {
       ],
     })
 
-    logger.info(`Asignación actualizada: ${id}`)
+   
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Asignación actualizada correctamente",
       data: updatedAssignment,
@@ -294,9 +292,8 @@ export const deactivateAssignment = async (req, res) => {
       assignedTo: null,
     })
 
-    logger.info(`Asignación desactivada: ${id}`)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Asignación desactivada correctamente",
     })
@@ -340,9 +337,7 @@ export const deleteAssignment = async (req, res) => {
 
     await assignment.destroy()
 
-    logger.info(`Asignación eliminada: ${id}`)
-
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Asignación eliminada correctamente",
     })
@@ -378,7 +373,7 @@ export const getUserAssignments = async (req, res) => {
       order: [["createdAt", "DESC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: assignments,
     })
@@ -408,7 +403,7 @@ export const getVehicleAssignments = async (req, res) => {
       order: [["createdAt", "DESC"]],
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: assignments,
     })
