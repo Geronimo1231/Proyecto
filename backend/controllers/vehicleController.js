@@ -131,18 +131,21 @@ export const createVehicle = async (req, res) => {
       })
     }
 
-    const vehicle = await Vehicle.create({
-      licensePlate,
-      model,
-      brand,
-      year,
-      type,
-      color,
-      mileage: mileage || 0,
-      engineNumber,
-      chassisNumber,
-      status: "available",
+      const vehicle = await Vehicle.create({
+        licensePlate,
+        model,
+        brand,
+        year,
+        type,
+        color,
+        mileage: mileage || 0,
+        engineNumber,
+        chassisNumber,
+        status: "available",
+        image: req.body.image || null,
     })
+
+
     res.status(200).json({
       success: true,
       message: "Vehículo creado correctamente",
@@ -169,6 +172,7 @@ export const updateVehicle = async (req, res) => {
       status,
       image,
     } = req.body
+
 
     // Fetch vehicle first
     const vehicle = await Vehicle.findByPk(id)
@@ -212,8 +216,8 @@ export const updateVehicle = async (req, res) => {
       engineNumber: engineNumber || vehicle.engineNumber,
       chassisNumber: chassisNumber || vehicle.chassisNumber,
       status: status || vehicle.status,
-      image: newImage,
-    })
+      image: req.body.image !== undefined ? (req.body.image.trim() === "" ? null : req.body.image) : vehicle.image,
+})
 
     res.status(200).json({
       success: true,

@@ -72,7 +72,7 @@
       >
         <div class="aspect-w-16 aspect-h-9">
           <img
-            :src="vehiculo.image || '/placeholder.svg?height=200&width=300'"
+            :src="getImageUrl(vehiculo.image)"
             :alt="vehiculo.model"
             class="w-full h-48 object-cover"
           />
@@ -127,17 +127,30 @@ const filters = ref({
 
 const filteredVehicles = computed(() => {
   return vehicles.value.filter(vehiculo => {
-    const matchesSearch = !filters.value.search || 
-      vehiculo.licensePlate?.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      vehiculo.model?.toLowerCase().includes(filters.value.search.toLowerCase())
-    
-    const matchesMarca = !filters.value.marca || 
-      vehiculo.brand?.toLowerCase().includes(filters.value.marca.toLowerCase())
-    const matchesEstado = !filters.value.estado || vehiculo.status === filters.value.estado
-    
+    const search = filters.value.search.toLowerCase()
+    const marca = filters.value.marca.toLowerCase()
+    const estado = filters.value.estado
+
+    const matchesSearch =
+      !filters.value.search ||
+      vehiculo.licensePlate?.toLowerCase().includes(search) ||
+      vehiculo.model?.toLowerCase().includes(search)
+
+    const matchesMarca = !filters.value.marca || vehiculo.brand?.toLowerCase().includes(marca)
+    const matchesEstado = !filters.value.estado || vehiculo.status === estado
+
     return matchesSearch && matchesMarca && matchesEstado
   })
 })
+
+// Función para construir URL completa de la imagen
+const getImageUrl = (url) => {
+  if (!url) return '/placeholder.svg?height=200&width=300'
+  if (url.startsWith('http') || url.startsWith('data:')) return url
+  if (url.startsWith('/uploads/')) return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${url}`
+  // Si sólo tienes el nombre del archivo, asume que está en /uploads/photos/
+  return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/photos/${url}`
+}
 
 const fetchData = async () => {
   try {

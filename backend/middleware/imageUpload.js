@@ -51,8 +51,8 @@ export const processImageUpload = (fieldName = "image") => {
       if (req.file) {
         const imageUrl = `/uploads/${req.file.filename}`
 
-        // Usa photo para que coincida con el controlador
-        req.body.photo = imageUrl
+        req.body.image = imageUrl // Cambia photo por image
+
         req.body.imageInfo = {
           filename: req.file.filename,
           originalName: req.file.originalname,
@@ -67,6 +67,7 @@ export const processImageUpload = (fieldName = "image") => {
     },
   ]
 }
+
 
 
 // Middleware para eliminar imagen anterior
