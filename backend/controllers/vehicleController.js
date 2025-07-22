@@ -173,7 +173,8 @@ export const updateVehicle = async (req, res) => {
       mileage,
       engineNumber,
       chassisNumber,
-      status
+      status,
+      imageUrl
     } = req.body;
 
     const vehicle = await Vehicle.findByPk(id);
@@ -194,7 +195,7 @@ export const updateVehicle = async (req, res) => {
       engineNumber,
       chassisNumber,
       status, 
-      image,
+      image: imageUrl || null,
     });
 
     res.status(200).json({
