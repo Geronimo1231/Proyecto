@@ -29,7 +29,7 @@
       >
         <div class="aspect-w-16 aspect-h-9">
           <img
-            :src="vehiculo.image || '/placeholder.svg?height=200&width=300'"
+            :src="VITE_APP_IMAGE_URL + vehiculo.image || '/placeholder.svg?height=200&width=300'"
             :alt="vehiculo.model"
             class="w-full h-48 object-cover"
           />
@@ -242,6 +242,9 @@ import api from '../../services/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'vue3-toastify'
+
+
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const vehicle = ref([])
 const showDetailsModal = ref(false)

@@ -86,7 +86,7 @@
           >
             <div class="aspect-w-16 aspect-h-9">
               <img
-                :src="vehiculo.imagenes?.[0] || '/placeholder.svg?height=200&width=300'"
+                :src="VITE_APP_IMAGE_URL + vehiculo.image?.[0] || '/placeholder.svg?height=200&width=300'"
                 :alt="vehiculo.modelo"
                 class="w-full h-32 object-cover"
               />
