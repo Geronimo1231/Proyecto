@@ -167,7 +167,7 @@
                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
                 <p class="mt-1 text-xs text-gray-500">
-                  PNG, JPG, GIF hasta 5MB
+                  PNG, JPG, GIF hasta 20MB
                 </p>
               </div>
             </div>
@@ -273,8 +273,8 @@ const fetchUser = async () => {
 const handleImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no puede ser mayor a 5MB')
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('La imagen no puede ser mayor a 20MB')
       return
     }
     

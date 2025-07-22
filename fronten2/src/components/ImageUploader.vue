@@ -23,7 +23,7 @@
         <p class="upload-text">
           Arrastra una imagen aquí o <span class="upload-link">haz clic para seleccionar</span>
         </p>
-        <p class="upload-hint">PNG, JPG, GIF hasta 5MB</p>
+        <p class="upload-hint">PNG, JPG, GIF hasta 20MB</p>
       </div>
       
       <div v-if="uploading" class="upload-progress">
@@ -89,7 +89,7 @@ watch(() => props.modelValue, (newValue) => {
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http') || url.startsWith('data:')) return url
-  if (url.startsWith('/uploads/')) return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${url}`
+  if (url.startsWith('/uploads/')) return `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${url}`
   return url
 }
 
@@ -123,8 +123,8 @@ const processFile = async (file) => {
       throw new Error('Solo se permiten archivos de imagen')
     }
     
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('El archivo es demasiado grande. Máximo 5MB')
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error('El archivo es demasiado grande. Máximo 20MB')
     }
     
     fileName.value = file.name

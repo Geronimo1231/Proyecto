@@ -166,7 +166,7 @@
             <h3 class="text-lg font-medium text-gray-900 mb-4">Imagen del Vehículo</h3>
             <div class="aspect-w-16 aspect-h-9">
               <img
-                :src="vehicle.image || '/placeholder.svg?height=200&width=300'"
+                :src="VITE_APP_IMAGE_URL + vehicle.image || '/placeholder.svg?height=200&width=300'"
                 :alt="vehicle.licensePlate"
                 class="w-full h-48 object-cover rounded-lg"
               />
@@ -174,6 +174,7 @@
           </div>
         </div>
 
+        
         
         <!-- Asignación Actual -->
         <div v-if="currentAssignment" class="bg-white shadow rounded-lg">
@@ -310,6 +311,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
+
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const route = useRoute()
 const router = useRouter()

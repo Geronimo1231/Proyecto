@@ -272,11 +272,7 @@ const createVehicle = async () => {
       formData.append('imageUrl', form.value.image)
     }
     
-    const response = await api.post('/vehicles', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    const response = await api.post('/vehicles', formData )
     
     if (response.data.success) {
       toast.success('Vehículo creado correctamente')

@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 8080
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use("/upload", express.static(path.join(__dirname, "uploads")))
+app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Rutas
 import authRoutes from "./routes/auth.js"
@@ -100,6 +100,9 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`)
+      console.log(`--------------------------------------
+--------------------------------------
+--------------------------------------`)
     })
   } catch (error) {
     console.error("❌ Error al iniciar servidor:", error)

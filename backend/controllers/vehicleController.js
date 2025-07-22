@@ -121,7 +121,9 @@ export const getVehicleById = async (req, res) => {
 
 export const createVehicle = async (req, res) => {
   try {
-    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber } = req.body
+    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, imageUrl } = req.body
+
+    const image = req.body.photo || null // lo que multer deja como URL
 
     const existingVehicle = await Vehicle.findOne({ where: { licensePlate } })
     if (existingVehicle) {
@@ -131,18 +133,18 @@ export const createVehicle = async (req, res) => {
       })
     }
 
-      const vehicle = await Vehicle.create({
-        licensePlate,
-        model,
-        brand,
-        year,
-        type,
-        color,
-        mileage: mileage || 0,
-        engineNumber,
-        chassisNumber,
-        status: "available",
-        image: req.body.image || null,
+    const vehicle = await Vehicle.create({
+      licensePlate,
+      model,
+      brand,
+      year,
+      type,
+      color,
+      mileage: mileage || 0,
+      engineNumber,
+      chassisNumber,
+      status: "available",
+      image: imageUrl || null,
     })
 
 
@@ -156,9 +158,11 @@ export const createVehicle = async (req, res) => {
   }
 }
 
+
 export const updateVehicle = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
+
     const {
       licensePlate,
       model,
@@ -169,67 +173,40 @@ export const updateVehicle = async (req, res) => {
       mileage,
       engineNumber,
       chassisNumber,
-      status,
-      image,
-    } = req.body
+      status
+    } = req.body;
 
-
-    // Fetch vehicle first
-    const vehicle = await Vehicle.findByPk(id)
+    const vehicle = await Vehicle.findByPk(id);
     if (!vehicle) {
-      return res.status(400).json({
-        success: false,
-        message: "Vehículo no encontrado",
-      })
+      return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
-    // Check if licensePlate is changing and if it already exists
-    if (licensePlate && licensePlate !== vehicle.licensePlate) {
-      const existingVehicle = await Vehicle.findOne({
-        where: { licensePlate, id: { [Op.ne]: id } },
-      })
-      if (existingVehicle) {
-        return res.status(400).json({
-          success: false,
-          message: "Ya existe un vehículo con esta placa",
-        })
-      }
-    }
+    const image = req.body.photo || vehicle.image;
 
-    // Handle image update (allow clearing image with empty string)
-    let newImage
-    if (typeof image === "string") {
-      newImage = image.trim() === "" ? null : image
-    } else {
-      newImage = vehicle.image
-    }
-
-    // Update vehicle with new values or keep old ones if undefined
     await vehicle.update({
-      licensePlate: licensePlate || vehicle.licensePlate,
-      model: model || vehicle.model,
-      brand: brand || vehicle.brand,
-      year: year || vehicle.year,
-      type: type || vehicle.type,
-      color: color || vehicle.color,
-      mileage: mileage !== undefined ? mileage : vehicle.mileage,
-      engineNumber: engineNumber || vehicle.engineNumber,
-      chassisNumber: chassisNumber || vehicle.chassisNumber,
-      status: status || vehicle.status,
-      image: req.body.image !== undefined ? (req.body.image.trim() === "" ? null : req.body.image) : vehicle.image,
-})
+      licensePlate,
+      model,
+      brand,
+      year,
+      type,
+      color,
+      mileage,
+      engineNumber,
+      chassisNumber,
+      status, 
+      image,
+    });
 
     res.status(200).json({
       success: true,
       message: "Vehículo actualizado correctamente",
       data: vehicle,
-    })
+    });
   } catch (error) {
-    console.log("error----")
-    console.log(error)
-    handleError(res, error, "updateVehicle")
+    handleError(res, error, "updateVehicle");
   }
-}
+};
+
 
 export const deleteVehicle = async (req, res) => {
   try {
