@@ -189,7 +189,7 @@ const fetchData = async () => {
     loading.value = true
     
     // Cargar ubicaciones GPS
-    const locationsPromise = api.get('/gps/latest').catch(() => ({ data: { data: [] } }))
+    const locationsPromise = api.get('/gps/locations?latest=true').catch(() => ({ data: { data: [] } }))
     
     // Cargar usuarios
     const usersPromise = api.get('/users?role=User&isActive=true').catch(() => ({ data: { data: [] } }))
@@ -204,6 +204,8 @@ const fetchData = async () => {
     ])
     
     locations.value = locationsRes.data.data || []
+    console.log('Ubicaciones cargadas:', locations.value)
+
     users.value = usersRes.data.data || []
     vehicles.value = vehiclesRes.data.data || []
     
