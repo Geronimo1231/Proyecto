@@ -139,7 +139,7 @@ export const createUser = async (req, res) => {
       phone,
       password, // El hook beforeCreate se encargará de hashearla
       role: role || "User",
-      photo: photo || "/placeholder.svg?height=100&width=100",
+      photo: photo || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&s",
       isActive: true,
     })
 

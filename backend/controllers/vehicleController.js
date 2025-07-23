@@ -162,7 +162,6 @@ export const createVehicle = async (req, res) => {
 export const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-
     const {
       licensePlate,
       model,
@@ -174,7 +173,7 @@ export const updateVehicle = async (req, res) => {
       engineNumber,
       chassisNumber,
       status,
-      imageUrl
+      oldImage // recibe nombre o ruta de imagen anterior para borrar
     } = req.body;
 
     const vehicle = await Vehicle.findByPk(id);
@@ -182,6 +181,7 @@ export const updateVehicle = async (req, res) => {
       return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
+    // La URL de la nueva imagen viene de req.body.photo que setea el middleware multer
     const image = req.body.photo || vehicle.image;
 
     await vehicle.update({
@@ -194,8 +194,8 @@ export const updateVehicle = async (req, res) => {
       mileage,
       engineNumber,
       chassisNumber,
-      status, 
-      image: imageUrl || null,
+      status,
+      image,
     });
 
     res.status(200).json({
@@ -207,6 +207,7 @@ export const updateVehicle = async (req, res) => {
     handleError(res, error, "updateVehicle");
   }
 };
+
 
 
 export const deleteVehicle = async (req, res) => {

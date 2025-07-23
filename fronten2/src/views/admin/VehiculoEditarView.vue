@@ -235,6 +235,8 @@ import { TruckIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
+
+
 const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const route = useRoute()
@@ -248,6 +250,7 @@ const loading = ref(true)
 const saving = ref(false)
 const imagePreview = ref(null)
 const fileInput = ref(null)
+const selectedFile = ref(null)
 
 const form = ref({
   licensePlate: '',
@@ -314,41 +317,57 @@ const fetchData = async () => {
 
 const handleImageChange = (event) => {
   const file = event.target.files[0]
+  console.log('Archivo seleccionado:', file)
+  
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
       toast.error('La imagen no puede ser mayor a 5MB')
+      selectedFile.value = null
       return
     }
     
+    selectedFile.value = file
+
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target.result
     }
     reader.readAsDataURL(file)
+  } else {
+    selectedFile.value = null
+    imagePreview.value = null
   }
 }
+
+
 
 const updateVehicle = async () => {
   try {
     saving.value = true
-    
+
     const formData = new FormData()
     Object.keys(form.value).forEach(key => {
       if (form.value[key] !== null && form.value[key] !== undefined) {
         formData.append(key, form.value[key])
       }
     })
-    
-    // Agregar imagen si se seleccionó una nueva
-    if (fileInput.value?.files[0]) {
-      formData.append('image', fileInput.value.files[0])
+
+    if (vehicle.value?.image) {
+      formData.append('oldImage', vehicle.value.image)
     }
 
-    
-    const response = await api.put(`/vehicles/${vehicleId}`, formData
-  
-  )
-    
+    console.log('Archivo a enviar:', selectedFile.value)
+
+    if (selectedFile.value) {
+      formData.append('image', selectedFile.value)
+    }
+
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1])
+    }
+
+    const response = await api.put(`/vehicles/${vehicleId}`, formData)
+
     if (response.data.success || response.status === 200) {
       toast.success('Vehículo actualizado correctamente')
       router.push(`/admin/vehiculos/${vehicleId}`)
@@ -362,6 +381,9 @@ const updateVehicle = async () => {
     saving.value = false
   }
 }
+
+
+
 
 onMounted(() => {
   fetchData()

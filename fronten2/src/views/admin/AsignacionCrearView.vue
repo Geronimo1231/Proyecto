@@ -150,10 +150,7 @@ const loadData = async () => {
     if (usersResponse.data.success) {
       // Filtrar usuarios que no tengan asignaciones activas
       const allUsers = usersResponse.data.data.users || usersResponse.data.data || []
-      availableUsers.value = allUsers.filter(user => {
-        const hasActiveAssignment = user.assignments && user.assignments.some(assignment => assignment.isActive)
-        return !hasActiveAssignment
-      })
+      availableUsers.value = allUsers
     } else {
       availableUsers.value = []
     }

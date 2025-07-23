@@ -116,8 +116,8 @@ import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
-const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const vehicles = ref([])
 const loading = ref(false)

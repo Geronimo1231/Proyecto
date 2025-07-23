@@ -1,19 +1,24 @@
-import { Assignment, User, Vehicle } from "../models/index.js"
-import pkg from "../config/config.cjs"
-const { logger } = pkg
+import { Assignment, User, Vehicle, sequelize } from "../models/index.js";
+import pkg from "../config/config.cjs";
+const { logger } = pkg;
 
-import { Op } from "sequelize"
+import { Op } from "sequelize";
 
+// Obtener todas las asignaciones con paginación y búsqueda
 export const getAllAssignments = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", status = "" } = req.query
-    const offset = (page - 1) * limit
+    const { page = "1", limit = "10", search = "", status = "" } = req.query;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
 
-    const whereClause = {}
-
-    if (status && status !== "") {
-      whereClause.isActive = status === "active"
+    const whereClause = {};
+    if (status === "true" || status === "false") {
+      whereClause.isActive = status === "true";
     }
+
+
+    console.log("Filtros usados:", { pageNum, limitNum, search, status, whereClause });
 
     const { count, rows: assignments } = await Assignment.findAndCountAll({
       where: whereClause,
@@ -31,7 +36,7 @@ export const getAllAssignments = async (req, res) => {
                 ],
               }
             : undefined,
-          required: search ? true : false,
+          required: false, // Cambiado a false
         },
         {
           model: Vehicle,
@@ -39,10 +44,12 @@ export const getAllAssignments = async (req, res) => {
           attributes: ["id", "licensePlate", "model", "brand", "status"],
         },
       ],
-      limit: Number.parseInt(limit),
-      offset: Number.parseInt(offset),
+      limit: limitNum,
+      offset,
       order: [["createdAt", "DESC"]],
-    })
+    });
+
+    console.log(`Total asignaciones encontradas: ${count}`);
 
     res.status(200).json({
       success: true,
@@ -50,25 +57,27 @@ export const getAllAssignments = async (req, res) => {
         assignments,
         pagination: {
           total: count,
-          page: Number.parseInt(page),
-          limit: Number.parseInt(limit),
-          totalPages: Math.ceil(count / limit),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(count / limitNum),
         },
       },
-    })
+    });
   } catch (error) {
-    logger.error("Error en getAllAssignments:", error)
-    res.status(400).json({
+    console.error("Error en getAllAssignments:", error);
+    res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
+
+// Obtener una asignación por ID
 export const getAssignmentById = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const assignment = await Assignment.findByPk(id, {
       include: [
@@ -83,143 +92,164 @@ export const getAssignmentById = async (req, res) => {
           attributes: ["id", "licensePlate", "model", "brand", "year", "status"],
         },
       ],
-    })
+    });
 
     if (!assignment) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Asignación no encontrada",
-      })
+      });
     }
 
     res.status(200).json({
       success: true,
       data: assignment,
-    })
+    });
   } catch (error) {
-    logger.error("Error en getAssignmentById:", error)
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
-import { sequelize } from "../models/index.js" // asumiendo que exportas sequelize
-
+// Crear una nueva asignación
 export const createAssignment = async (req, res) => {
-  const t = await sequelize.transaction()
+  let t;
   try {
-    const { userId, vehicleId, notes } = req.body
+    t = await sequelize.transaction();
 
-    // Validaciones...
-    const user = await User.findByPk(userId, { transaction: t })
-    if (!user) throw new Error("Usuario no encontrado")
+    const { userId, vehicleId, notes } = req.body;
 
-    const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t })
-    if (!vehicle) throw new Error("Vehículo no encontrado")
-    if (vehicle.status !== "available") throw new Error("Vehículo no disponible")
+    // Validar parámetros básicos
+    if (!userId || !vehicleId) {
+      throw new Error("Faltan datos obligatorios: userId y vehicleId");
+    }
 
+    // Validar usuario
+    const user = await User.findByPk(userId, { transaction: t });
+    if (!user) throw new Error("Usuario no encontrado");
+
+    // Validar vehículo y estado
+    const vehicle = await Vehicle.findByPk(vehicleId, { transaction: t });
+    if (!vehicle) throw new Error("Vehículo no encontrado");
+    if ((vehicle.status || "").toLowerCase() !== "available") throw new Error("Vehículo no disponible");
+
+    // Validar que usuario no tenga asignación activa
     const activeAssignment = await Assignment.findOne({
       where: { userId, isActive: true },
       transaction: t,
-    })
-    if (activeAssignment) throw new Error("Usuario ya tiene asignación activa")
+    });
+    if (activeAssignment) throw new Error("Usuario ya tiene asignación activa");
 
-    const assignment = await Assignment.create({
-      userId,
-      vehicleId,
-      notes,
-      assignmentDate: new Date(),
-      isActive: true,
-    }, { transaction: t })
+    // Crear asignación
+    const assignment = await Assignment.create(
+      {
+        userId,
+        vehicleId,
+        notes,
+        assignmentDate: new Date(),
+        isActive: true,
+      },
+      { transaction: t }
+    );
 
-    await vehicle.update({
-      status: "assigned",
-      assignedTo: userId,
-    }, { transaction: t })
+    // Actualizar estado del vehículo
+    await vehicle.update(
+      {
+        status: "assigned",
+        assignedTo: userId,
+      },
+      { transaction: t }
+    );
 
-    await t.commit()
+    await t.commit();
 
-    // Buscar con relaciones fuera de la transacción está OK
+    // Obtener asignación completa con relaciones (fuera de transacción)
     const newAssignment = await Assignment.findByPk(assignment.id, {
       include: [
         { model: User, as: "user", attributes: ["id", "firstName", "lastName", "email"] },
         { model: Vehicle, as: "vehicle", attributes: ["id", "licensePlate", "model", "brand"] },
       ],
-    })
+    });
 
-    res.status(200).json({
+    return res.status(201).json({
       success: true,
       message: "Asignación creada correctamente",
       data: newAssignment,
-    })
+    });
   } catch (error) {
-    await t.rollback()
-    logger.error("Error en createAssignment:", error)
-    res.status(400).json({
+    if (t) {
+      try {
+        await t.rollback();
+      } catch (rollbackError) {
+        logger.error("Error al hacer rollback:", rollbackError);
+      }
+    }
+    
+    return res.status(500).json({
       success: false,
       message: error.message || "Error interno del servidor",
-    })
+      error: error.stack || String(error),
+    });
   }
-}
+};
 
+
+
+// Obtener usuarios disponibles
 export const getAvailableUsersForAssignment = async (req, res) => {
   try {
-    // Obtener IDs de usuarios que tienen asignaciones activas
     const activeAssignments = await Assignment.findAll({
       where: { isActive: true },
-      attributes: ['userId'],
-      group: ['userId'],
-    })
+      attributes: ["userId"],
+      group: ["userId"],
+    });
 
-    const activeUserIds = activeAssignments.map(a => a.userId)
+    const activeUserIds = activeAssignments.map(a => a.userId);
 
-    // Traer usuarios activos con rol 'User' que NO estén en activeUserIds
     const users = await User.findAll({
       where: {
         deletedAt: null,
         isActive: true,
-        role: 'User',
+        role: "User",
         id: {
-          [Op.notIn]: activeUserIds.length > 0 ? activeUserIds : [0], // Si no hay usuarios activos, evitar error con id NOT IN [0]
+          [Op.notIn]: activeUserIds.length > 0 ? activeUserIds : [0],
         },
       },
-      order: [['firstName', 'ASC']],
-      attributes: ['id', 'firstName', 'lastName', 'email'],
-    })
+      order: [["firstName", "ASC"]],
+      attributes: ["id", "firstName", "lastName", "email"],
+    });
 
     res.status(200).json({
       success: true,
       data: users,
-    })
+    });
   } catch (error) {
-    logger.error("Error en getAvailableUsersForAssignment:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
-
-
+// Actualizar una asignación (notas)
 export const updateAssignment = async (req, res) => {
   try {
-    const { id } = req.params
-    const { notes } = req.body
+    const { id } = req.params;
+    const { notes } = req.body;
 
-    const assignment = await Assignment.findByPk(id)
+    const assignment = await Assignment.findByPk(id);
     if (!assignment) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Asignación no encontrada",
-      })
+      });
     }
 
-    await assignment.update({ notes })
+    await assignment.update({ notes });
 
     const updatedAssignment = await Assignment.findByPk(id, {
       include: [
@@ -234,116 +264,109 @@ export const updateAssignment = async (req, res) => {
           attributes: ["id", "licensePlate", "model", "brand"],
         },
       ],
-    })
-
-   
+    });
 
     res.status(200).json({
       success: true,
       message: "Asignación actualizada correctamente",
       data: updatedAssignment,
-    })
+    });
   } catch (error) {
-    logger.error("Error en updateAssignment:", error)
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
+// Desactivar una asignación activa
 export const deactivateAssignment = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
 
     const assignment = await Assignment.findByPk(id, {
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-        },
-      ],
-    })
+      include: [{ model: Vehicle, as: "vehicle" }],
+    });
 
     if (!assignment) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Asignación no encontrada",
-      })
+      });
     }
 
     if (!assignment.isActive) {
       return res.status(400).json({
         success: false,
         message: "La asignación ya está inactiva",
-      })
+      });
     }
 
-    // Desactivar la asignación
-    await assignment.update({
-      isActive: false,
-      unassignmentDate: new Date(),
-    })
+    // Actualiza asignación
+    await assignment.update({ isActive: false, unassignmentDate: new Date() });
 
-    // Actualizar el estado del vehículo
-    await assignment.vehicle.update({
-      status: "available",
-      assignedTo: null,
-    })
+    // Actualiza vehículo solo si existe
+    if (assignment.vehicle) {
+      await assignment.vehicle.update({ status: "available", assignedTo: null });
+    } else {
+      console.warn(`Asignación ${id} no tiene vehículo asignado.`);
+    }
 
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Asignación desactivada correctamente",
-    })
+    });
   } catch (error) {
-    logger.error("Error en deactivateAssignment:", error)
-    res.status(400).json({
+    console.error("Error en deactivateAssignment:", error);
+    return res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
-export const deleteAssignment = async (req, res) => {
+export const activateAssignment = async (req, res) => {
   try {
     const { id } = req.params
 
     const assignment = await Assignment.findByPk(id, {
-      include: [
-        {
-          model: Vehicle,
-          as: "vehicle",
-        },
-      ],
+      include: [{ model: Vehicle, as: "vehicle" }],
     })
 
     if (!assignment) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Asignación no encontrada",
       })
     }
 
-    // Si la asignación está activa, liberar el vehículo
     if (assignment.isActive) {
-      await assignment.vehicle.update({
-        status: "available",
-        assignedTo: null,
+      return res.status(400).json({
+        success: false,
+        message: "La asignación ya está activa",
       })
     }
 
-    await assignment.destroy()
+    await assignment.update({
+      isActive: true,
+      assignmentDate: new Date(),
+      unassignmentDate: null,
+    })
+
+    await assignment.vehicle.update({
+      status: "assigned",
+      assignedTo: assignment.userId,
+    })
 
     res.status(200).json({
       success: true,
-      message: "Asignación eliminada correctamente",
+      message: "Asignación activada correctamente",
     })
   } catch (error) {
-    logger.error("Error en deleteAssignment:", error)
-    res.status(400).json({
+    console.error("Error activating assignment:", error)
+    res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
@@ -351,15 +374,50 @@ export const deleteAssignment = async (req, res) => {
   }
 }
 
+
+// Eliminar una asignación
+export const deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const assignment = await Assignment.findByPk(id, {
+      include: [{ model: Vehicle, as: "vehicle" }],
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Asignación no encontrada",
+      });
+    }
+
+    if (assignment.isActive) {
+      await assignment.vehicle.update({ status: "available", assignedTo: null });
+    }
+
+    await assignment.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Asignación eliminada correctamente",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    });
+  }
+};
+
+// Obtener asignaciones por usuario
 export const getUserAssignments = async (req, res) => {
   try {
-    const { userId } = req.params
-    const { active = "" } = req.query
+    const { userId } = req.params;
+    const { active = "" } = req.query;
 
-    const whereClause = { userId }
-    if (active !== "") {
-      whereClause.isActive = active === "true"
-    }
+    const whereClause = { userId };
+    if (active !== "") whereClause.isActive = active === "true";
 
     const assignments = await Assignment.findAll({
       where: whereClause,
@@ -371,25 +429,26 @@ export const getUserAssignments = async (req, res) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-    })
+    });
 
     res.status(200).json({
       success: true,
       data: assignments,
-    })
+    });
   } catch (error) {
-    logger.error("Error en getUserAssignments:", error)
+
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};
 
+// Obtener asignaciones por vehículo
 export const getVehicleAssignments = async (req, res) => {
   try {
-    const { vehicleId } = req.params
+    const { vehicleId } = req.params;
 
     const assignments = await Assignment.findAll({
       where: { vehicleId },
@@ -401,18 +460,18 @@ export const getVehicleAssignments = async (req, res) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-    })
+    });
 
     res.status(200).json({
       success: true,
       data: assignments,
-    })
+    });
   } catch (error) {
-    logger.error("Error en getVehicleAssignments:", error)
+
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
-    })
+    });
   }
-}
+};

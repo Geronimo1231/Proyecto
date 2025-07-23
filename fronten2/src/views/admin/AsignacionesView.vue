@@ -24,7 +24,6 @@
               type="text"
               placeholder="Buscar por usuario o vehículo..."
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @input="debouncedSearch"
             />
           </div>
           <div>
@@ -32,7 +31,7 @@
             <select
               v-model="filters.status"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @change="fetchAssignments"
+              @change="onStatusChange"
             >
               <option value="">Todos</option>
               <option value="true">Activas</option>
@@ -131,21 +130,31 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                 <router-link
-                to="/admin/asignaciones/detalle"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              
-                Detalles
-              </router-link>
-                <button
-                  v-if="assignment.isActive"
-                  @click="deactivateAssignment(assignment)"
-                  class="text-yellow-600 hover:text-yellow-900"
+                  :to="`/adminasignaciones/detalle/${assignment.id}`"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Desactivar
-                </button>
+                  Detalles
+                </router-link>
+                <button
+                    v-if="assignment.isActive"
+                    @click="deactivateAssignment(assignment)"
+                    :disabled="loading"
+                    class="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Desactivar
+                  </button>
+                <button
+                    v-else
+                    @click="activateAssignment(assignment)"
+                    :disabled="loading"
+                    class="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Activar
+                  </button>
                 <button
                   @click="deleteAssignment(assignment)"
-                  class="text-red-600 hover:text-red-900"
+                  :disabled="loading"
+                  class="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Eliminar
                 </button>
@@ -159,8 +168,8 @@
       <div v-if="pagination.totalPages > 1" class="px-6 py-4 border-t border-gray-200">
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-700">
-            Mostrando {{ (pagination.page - 1) * pagination.limit + 1 }} a 
-            {{ Math.min(pagination.page * pagination.limit, pagination.total) }} 
+            Mostrando {{ (pagination.page - 1) * pagination.limit + 1 }} a
+            {{ Math.min(pagination.page * pagination.limit, pagination.total) }}
             de {{ pagination.total }} resultados
           </div>
           <div class="flex space-x-2">
@@ -199,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 import { useRouter } from 'vue-router'
@@ -220,31 +229,36 @@ const filters = ref({
   status: ''
 })
 
-let searchTimeout = null
-
 const visiblePages = computed(() => {
   const pages = []
   const start = Math.max(1, pagination.value.page - 2)
   const end = Math.min(pagination.value.totalPages, pagination.value.page + 2)
-  
+
   for (let i = start; i <= end; i++) {
     pages.push(i)
   }
-  
+
   return pages
 })
 
-const debouncedSearch = () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    fetchAssignments()
-  }, 500)
-}
+// Debounce para search usando watch
+let searchTimeout = null
+watch(
+  () => filters.value.search,
+  () => {
+    if (searchTimeout) clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+      pagination.value.page = 1
+      fetchAssignments()
+    }, 500)
+  }
+)
 
+// Fetch asignaciones
 const fetchAssignments = async () => {
   try {
     loading.value = true
-    
+
     const params = new URLSearchParams({
       page: pagination.value.page,
       limit: pagination.value.limit
@@ -253,20 +267,22 @@ const fetchAssignments = async () => {
     if (filters.value.search) {
       params.append('search', filters.value.search)
     }
-    
+
     if (filters.value.status) {
-      params.append('isActive', filters.value.status)
+      const isActive = filters.value.status === "true";
+      params.append('status', isActive);
     }
 
+
     const response = await api.get(`/assignments?${params.toString()}`)
-    
+
     if (response.data.success) {
-      assignments.value = response.data.data || []
-      if (response.data.pagination) {
-        pagination.value = response.data.pagination
+      assignments.value = response.data.data.assignments || []
+      if (response.data.data.pagination) {
+        pagination.value = response.data.data.pagination
       }
     } else {
-      assignments.value = response.data.data || []
+      assignments.value = []
     }
   } catch (error) {
     console.error('Error fetching assignments:', error)
@@ -276,6 +292,7 @@ const fetchAssignments = async () => {
     loading.value = false
   }
 }
+
 
 const changePage = (page) => {
   if (page >= 1 && page <= pagination.value.totalPages) {
@@ -293,19 +310,38 @@ const clearFilters = () => {
   fetchAssignments()
 }
 
-const viewAssignment = (assignment) => {
-  router.push(`/admin/asignaciones/${assignment.id}`)
+const onStatusChange = () => {
+  pagination.value.page = 1
+  fetchAssignments()
 }
 
 const deactivateAssignment = async (assignment) => {
   if (confirm('¿Estás seguro de que deseas desactivar esta asignación?')) {
     try {
+      loading.value = true
       await api.patch(`/assignments/${assignment.id}/deactivate`)
       toast.success('Asignación desactivada correctamente')
       await fetchAssignments()
     } catch (error) {
       console.error('Error deactivating assignment:', error)
       toast.error('Error al desactivar la asignación')
+    } finally {
+      loading.value = false
+    }
+  }
+}
+const activateAssignment = async (assignment) => {
+  if (confirm('¿Estás seguro de que deseas activar esta asignación?')) {
+    try {
+      loading.value = true
+      await api.patch(`/assignments/${assignment.id}/activate`)
+      toast.success('Asignación activada correctamente')
+      await fetchAssignments()
+    } catch (error) {
+      console.error('Error activando la asignación:', error)
+      toast.error('Error al activar la asignación')
+    } finally {
+      loading.value = false
     }
   }
 }
@@ -313,60 +349,44 @@ const deactivateAssignment = async (assignment) => {
 const deleteAssignment = async (assignment) => {
   if (confirm('¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.')) {
     try {
+      loading.value = true
       await api.delete(`/assignments/${assignment.id}`)
       toast.success('Asignación eliminada correctamente')
       await fetchAssignments()
     } catch (error) {
       console.error('Error deleting assignment:', error)
       toast.error('Error al eliminar la asignación')
+    } finally {
+      loading.value = false
     }
   }
 }
 
-// Helper functions para manejar diferentes estructuras de datos
+// Helpers simplificados
 const getUserName = (assignment) => {
-  if (assignment.User) {
-    return `${assignment.User.firstName || ''} ${assignment.User.lastName || ''}`.trim()
-  }
-  if (assignment.user) {
-    return `${assignment.user.firstName || ''} ${assignment.user.lastName || ''}`.trim()
-  }
-  return 'Usuario no disponible'
+  const user = assignment.User ?? assignment.user
+  return user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Usuario no disponible'
 }
 
 const getUserEmail = (assignment) => {
-  if (assignment.User) {
-    return assignment.User.email || ''
-  }
-  if (assignment.user) {
-    return assignment.user.email || ''
-  }
-  return ''
+  const user = assignment.User ?? assignment.user
+  return user?.email ?? ''
 }
 
 const getUserPhoto = (assignment) => {
-  const photo = assignment.User?.photo || assignment.user?.photo
-  return photo || '/placeholder.svg?height=40&width=40'
+  return VITE_APP_IMAGE_URL + assignment.User?.photo ?? assignment.user?.photo ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'
 }
 
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
+
 const getVehiclePlate = (assignment) => {
-  if (assignment.Vehicle) {
-    return assignment.Vehicle.licensePlate || 'N/A'
-  }
-  if (assignment.vehicle) {
-    return assignment.vehicle.licensePlate || 'N/A'
-  }
-  return 'Vehículo no disponible'
+  const vehicle = assignment.Vehicle ?? assignment.vehicle
+  return vehicle?.licensePlate ?? 'N/A'
 }
 
 const getVehicleInfo = (assignment) => {
-  if (assignment.Vehicle) {
-    return `${assignment.Vehicle.brand || ''} ${assignment.Vehicle.model || ''}`.trim()
-  }
-  if (assignment.vehicle) {
-    return `${assignment.vehicle.brand || ''} ${assignment.vehicle.model || ''}`.trim()
-  }
-  return ''
+  const vehicle = assignment.Vehicle ?? assignment.vehicle
+  return vehicle ? `${vehicle.brand ?? ''} ${vehicle.model ?? ''}`.trim() : ''
 }
 
 const formatDate = (dateString) => {
@@ -379,7 +399,7 @@ const formatDate = (dateString) => {
       hour: '2-digit',
       minute: '2-digit'
     })
-  } catch (error) {
+  } catch {
     return '-'
   }
 }
