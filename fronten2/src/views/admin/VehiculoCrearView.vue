@@ -150,6 +150,45 @@
                 </div>
               </div>
 
+              <!-- Nuevos campos Latitud y Longitud -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label for="latitude" class="block text-sm font-medium text-gray-700">
+                    Latitud
+                  </label>
+                  <input
+                    id="latitude"
+                    v-model="form.latitude"
+                    type="number"
+                    step="any"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="-12.04318"
+                  />
+                </div>
+
+                <div>
+                  <label for="longitude" class="block text-sm font-medium text-gray-700">
+                    Longitud
+                  </label>
+                  <input
+                    id="longitude"
+                    v-model="form.longitude"
+                    type="number"
+                    step="any"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="-77.02824"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                @click="getCurrentLocation"
+                class="mt-2 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Usar mi ubicación actual
+              </button>
+
               <div>
                 <label for="status" class="block text-sm font-medium text-gray-700">
                   Estado
@@ -226,7 +265,9 @@ const form = ref({
   engineNumber: '',
   chassisNumber: '',
   status: 'available',
-  image: ''
+  image: '',
+  latitude: '',    // Nuevos campos
+  longitude: ''
 })
 
 const fetchData = async () => {
@@ -246,11 +287,30 @@ const fetchData = async () => {
 
 const handleImageUploaded = (imageData) => {
   console.log('Imagen subida:', imageData)
+  form.value.image = imageData.url || imageData // Ajusta según lo que retorne tu uploader
 }
 
 const handleImageError = (error) => {
   console.error('Error al subir imagen:', error)
   toast.error('Error al subir la imagen')
+}
+
+const getCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    toast.error('La geolocalización no está soportada por este navegador.')
+    return
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      form.value.latitude = position.coords.latitude
+      form.value.longitude = position.coords.longitude
+      toast.success('Ubicación obtenida correctamente')
+    },
+    error => {
+      toast.error('No se pudo obtener la ubicación: ' + error.message)
+    }
+  )
 }
 
 const createVehicle = async () => {
@@ -259,20 +319,19 @@ const createVehicle = async () => {
     
     const formData = new FormData()
     
-    // Agregar todos los campos del formulario
+    // Agregar todos los campos del formulario excepto 'image'
     Object.keys(form.value).forEach(key => {
       if (key !== 'image' && form.value[key] !== '') {
         formData.append(key, form.value[key])
       }
     })
     
-    // Si hay imagen, agregarla como archivo
+    // Enviar la URL de la imagen si existe
     if (form.value.image) {
-      // La imagen ya fue subida por el ImageUploader, solo enviamos la URL
       formData.append('imageUrl', form.value.image)
     }
     
-    const response = await api.post('/vehicles', formData )
+    const response = await api.post('/vehicles', formData)
     
     if (response.data.success) {
       toast.success('Vehículo creado correctamente')

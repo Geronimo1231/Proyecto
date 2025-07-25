@@ -66,7 +66,7 @@ const routes = [
       { path: "asignaciones", name: "AdminAsignaciones", component: AdminAsignaciones },
       { path: "asignaciones/crear", name: "AsignacionCrear", component: AsignacionCrearView },
       { path: "asignaciones/detalle", name: "AsignacionDetalleView ", component: AsignacionDetalleView },
-
+      //------------------------------------------//
       { path: "mapa", name: "AdminMapa", component: AdminMapa },
       { path: "registrar", name: "AdminRegistrar", component: AdminRegistrar },
       { path: "perfil", name: "PerfilAdmin", component: PerfilAdminView },

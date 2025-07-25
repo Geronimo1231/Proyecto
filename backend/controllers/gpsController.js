@@ -1,8 +1,7 @@
-import { GpsLocation, Vehicle, Assignment } from "../models/index.js"
-import pkg from "../config/config.cjs"
-const { logger } = pkg
+import { sequelize } from '../models/index.js'  // o donde esté
+import { Op } from 'sequelize'
+import { GpsLocation, Vehicle, Assignment, User } from '../models/index.js'
 
-import { Op } from "sequelize"
 
 export const createGpsLocation = async (req, res) => {
   try {
@@ -33,7 +32,6 @@ export const createGpsLocation = async (req, res) => {
       data: gpsLocation,
     })
   } catch (error) {
-    logger.error("Error en createGpsLocation:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -81,7 +79,6 @@ export const getVehicleLocations = async (req, res) => {
       data: locations,
     })
   } catch (error) {
-    logger.error("Error en getVehicleLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -102,9 +99,22 @@ export const getLatestVehicleLocation = async (req, res) => {
           as: "vehicle",
           attributes: ["id", "licensePlate", "model", "brand"],
         },
+        {
+          model: Assignment,
+          required: false,
+          where: { isActive: true },
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["id", "firstName", "lastName"],
+            },
+          ],
+        },
       ],
       order: [["gpsTimestamp", "DESC"]],
     })
+
 
     if (!location) {
       return res.status(404).json({
@@ -118,7 +128,6 @@ export const getLatestVehicleLocation = async (req, res) => {
       data: location,
     })
   } catch (error) {
-    logger.error("Error en getLatestVehicleLocation:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -129,52 +138,100 @@ export const getLatestVehicleLocation = async (req, res) => {
 
 export const getAllVehicleLocations = async (req, res) => {
   try {
-    const { limit = 1000, latest = false } = req.query
-
-    let locations
+    const { latest = false, limit = 1000 } = req.query
 
     if (latest === "true") {
-      // Obtener la última ubicación de cada vehículo
-      const vehicles = await Vehicle.findAll({
-        attributes: ["id"],
+      const query = `
+        SELECT gl.*
+        FROM (
+          SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY "vehicleId" ORDER BY "gpsTimestamp" DESC) as rn
+          FROM "GpsLocations"
+        ) gl
+        WHERE gl.rn = 1
+        ORDER BY gl."gpsTimestamp" DESC
+        LIMIT :limit;
+      `
+
+      const resultsRaw = await sequelize.query(query, {
+        replacements: { limit: Number(limit) },
+        type: sequelize.QueryTypes.SELECT,  // <-- Asegura que devuelve array de objetos
       })
 
-      const locationPromises = vehicles.map((vehicle) =>
-        GpsLocation.findOne({
-          where: { vehicleId: vehicle.id },
-          include: [
-            {
-              model: Vehicle,
-              as: "vehicle",
-              attributes: ["id", "licensePlate", "model", "brand", "status"],
-            },
-          ],
-          order: [["gpsTimestamp", "DESC"]],
-        }),
-      )
+      console.log('resultsRaw:', resultsRaw)  // Mira qué recibes aquí
 
-      const allLocations = await Promise.all(locationPromises)
-      locations = allLocations.filter((location) => location !== null)
-    } else {
-      locations = await GpsLocation.findAll({
-        include: [
+      // Ahora resultsRaw debería ser un array, así que:
+      const vehicleIds = resultsRaw.map(loc => loc.vehicleId)
+
+     const locations = await GpsLocation.findAll({
+  where: { vehicleId: { [Op.in]: vehicleIds } },
+          include: [
           {
             model: Vehicle,
             as: "vehicle",
             attributes: ["id", "licensePlate", "model", "brand", "status"],
+            include: [
+              {
+                model: Assignment,
+                as: "assignments",
+                where: { isActive: true },
+                required: false,
+                separate: true,
+                limit: 1,
+                order: [["assignmentDate", "DESC"]],
+                include: [
+                  {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "firstName", "lastName"],
+                  },
+                ],
+              },
+            ],
           },
         ],
-        order: [["gpsTimestamp", "DESC"]],
-        limit: Number.parseInt(limit),
+  order: [["gpsTimestamp", "DESC"]],
+})
+
+
+      return res.status(200).json({
+        success: true,
+        data: locations,
+      })
+    } else {
+      const locations = await GpsLocation.findAll({
+  where: { vehicleId: { [Op.in]: vehicleIds } },
+  include: [
+    {
+      model: Vehicle,
+      as: "vehicle",
+      attributes: ["id", "licensePlate", "model", "brand", "status"],
+      include: [
+        {
+          model: Assignment,
+          as: "assignments",
+          required: false,
+          where: { isActive: true },
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["id", "firstName", "lastName"],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  order: [["gpsTimestamp", "DESC"]],
+})
+      return res.status(200).json({
+        success: true,
+        data: locations,
       })
     }
-
-    res.status(200).json({
-      success: true,
-      data: locations,
-    })
   } catch (error) {
-    logger.error("Error en getAllVehicleLocations:", error)
+    console.error("Error en getAllVehicleLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -182,6 +239,10 @@ export const getAllVehicleLocations = async (req, res) => {
     })
   }
 }
+
+
+
+
 
 export const getUserVehicleLocations = async (req, res) => {
   try {
@@ -246,7 +307,7 @@ export const getUserVehicleLocations = async (req, res) => {
       data: locations,
     })
   } catch (error) {
-    logger.error("Error en getUserVehicleLocations:", error)
+    
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -275,7 +336,6 @@ export const deleteOldLocations = async (req, res) => {
       deletedCount,
     })
   } catch (error) {
-    logger.error("Error en deleteOldLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
@@ -335,11 +395,81 @@ export const bulkCreateGpsLocations = async (req, res) => {
       data: created,
     })
   } catch (error) {
-    logger.error("Error en bulkCreateGpsLocations:", error)
     res.status(500).json({
       success: false,
       message: "Error interno del servidor",
       error: error.message,
     })
+  }
+}
+
+export const simulateVehicleMovements = async (req, res) => {
+  try {
+    const vehicles = await Vehicle.findAll()
+
+    if (vehicles.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No hay vehículos para simular movimiento",
+      })
+    }
+
+    const latBase = 20.6767
+    const lngBase = -103.3475
+
+    const newLocations = vehicles.map(vehicle => {
+      const latitude = latBase + (Math.random() - 0.5) * 0.05
+      const longitude = lngBase + (Math.random() - 0.5) * 0.05
+      const speed = Math.floor(Math.random() * 80)
+      const direction = Math.floor(Math.random() * 360)
+
+      return {
+        vehicleId: vehicle.id,
+        latitude,
+        longitude,
+        speed,
+        direction,
+        gpsTimestamp: new Date(),
+      }
+    })
+
+    const createdLocations = await GpsLocation.bulkCreate(newLocations)
+
+    res.status(200).json({
+      success: true,
+      message: `Simulación completada para ${createdLocations.length} vehículos`,
+      data: createdLocations,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+
+export const createLocation = async (req, res) => {
+  try {
+    const { vehicleId, latitude, longitude, speed, timestamp } = req.body
+
+    if (!vehicleId || !latitude || !longitude) {
+      return res.status(400).json({ success: false, message: "Datos incompletos" })
+    }
+
+    const location = await prisma.location.create({
+      data: {
+        vehicleId,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        speed: parseFloat(speed || 0),
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
+      },
+    })
+
+    res.status(201).json({ success: true, data: location })
+  } catch (error) {
+    console.error("Error al registrar ubicación:", error)
+    res.status(500).json({ success: false, message: "Error interno del servidor" })
   }
 }

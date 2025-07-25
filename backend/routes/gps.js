@@ -7,10 +7,15 @@ import {
   getUserVehicleLocations,
   deleteOldLocations,
   bulkCreateGpsLocations,
+  createLocation,
+  simulateVehicleMovements,
 } from "../controllers/gpsController.js"
 import { authenticateToken, requireRole } from "../middleware/auth.js"
 
 const router = express.Router()
+
+router.post('/', authenticateToken, requireRole('Admin'), createLocation)
+
 
 // Rutas públicas (requieren autenticación)
 router.get("/locations", authenticateToken, getAllVehicleLocations)
@@ -22,5 +27,8 @@ router.get("/vehicle/:vehicleId/latest", authenticateToken, getLatestVehicleLoca
 router.post("/locations", authenticateToken, requireRole("Admin"), createGpsLocation)
 router.post("/locations/bulk", authenticateToken, requireRole("Admin"), bulkCreateGpsLocations)
 router.delete("/cleanup", authenticateToken, requireRole("Admin"), deleteOldLocations)
+
+// Ruta para simular movimientos
+router.post('/simulate', simulateVehicleMovements)
 
 export default router

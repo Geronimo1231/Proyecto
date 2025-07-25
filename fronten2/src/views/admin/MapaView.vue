@@ -122,8 +122,8 @@
               <strong>Usuario:</strong> {{ getUserName(location) }}
             </p>
             <div class="text-xs text-gray-500">
-              <p><strong>Lat:</strong> {{ (location.latitude || location.latitud || 0).toFixed(6) }}</p>
-              <p><strong>Lng:</strong> {{ (location.longitude || location.longitud || 0).toFixed(6) }}</p>
+              <p><strong>Lat:</strong> {{ Number(location.latitude || location.latitud || 0).toFixed(6) }}</p>
+              <p><strong>Lng:</strong> {{ Number(location.longitude || location.longitud || 0).toFixed(6) }}</p>
               <p><strong>Última actualización:</strong> {{ formatDate(location.timestamp || location.timestamp_gps || location.updatedAt) }}</p>
             </div>
           </div>
@@ -156,14 +156,16 @@ let refreshInterval = null
 const filteredLocations = computed(() => {
   return locations.value.filter(location => {
     const matchesUser = !selectedUser.value || 
-      getUserId(location) == selectedUser.value
-    
+      String(getUserId(location)) === String(selectedUser.value)
+
     const matchesVehicle = !selectedVehicle.value || 
-      getVehicleId(location) == selectedVehicle.value
-    
+      String(getVehicleId(location)) === String(selectedVehicle.value)
+
     return matchesUser && matchesVehicle
   })
 })
+
+
 
 const initMap = async () => {
   try {
@@ -187,29 +189,30 @@ const initMap = async () => {
 const fetchData = async () => {
   try {
     loading.value = true
-    
-    // Cargar ubicaciones GPS
-    const locationsPromise = api.get('/gps/locations?latest=true').catch(() => ({ data: { data: [] } }))
-    
-    // Cargar usuarios
-    const usersPromise = api.get('/users?role=User&isActive=true').catch(() => ({ data: { data: [] } }))
-    
-    // Cargar vehículos
-    const vehiclesPromise = api.get('/vehicles').catch(() => ({ data: { data: [] } }))
-    
-    const [locationsRes, usersRes, vehiclesRes] = await Promise.all([
-      locationsPromise,
-      usersPromise,
-      vehiclesPromise
-    ])
-    
-    locations.value = locationsRes.data.data || []
-    console.log('Ubicaciones cargadas:', locations.value)
 
-    users.value = usersRes.data.data || []
-    vehicles.value = vehiclesRes.data.data || []
-    
-    updateMapMarkers()
+    // Simular ubicaciones random para 5 vehículos
+    const fakeLocations = []
+    for (let i = 1; i <= 5; i++) {
+      // Coordenadas random cerca de un centro (ejemplo: Guadalajara)
+      const lat = 20.6597 + (Math.random() - 0.5) * 0.02
+      const lng = -103.3496 + (Math.random() - 0.5) * 0.02
+      const timestamp = new Date(Date.now() - Math.random() * 60000).toISOString()
+      fakeLocations.push({
+        vehicleId: i,
+        latitude: lat,
+        longitude: lng,
+        speed: Math.floor(Math.random() * 80),
+        timestamp
+      })
+    }
+
+    // Puedes simular users y vehicles estáticos o vacíos
+    locations.value = fakeLocations
+    users.value = []   
+    vehicles.value = [] 
+
+    await updateMapMarkers()
+
   } catch (error) {
     console.error('Error fetching data:', error)
     toast.error('Error al cargar las ubicaciones')
@@ -218,23 +221,32 @@ const fetchData = async () => {
   }
 }
 
+
+
+const polylines = ref(new Map())
+
 const updateMapMarkers = async () => {
   if (!map.value) return
-  
   try {
     const L = await import('leaflet')
-    
+
     // Limpiar marcadores existentes
     markers.value.forEach(marker => {
       map.value.removeLayer(marker)
     })
     markers.value.clear()
 
-    // Agregar nuevos marcadores
+    // Limpiar polylines existentes
+    polylines.value.forEach(line => {
+      map.value.removeLayer(line)
+    })
+    polylines.value.clear()
+
+    // Agregar marcadores
     filteredLocations.value.forEach(location => {
       const lat = location.latitude || location.latitud
       const lng = location.longitude || location.longitud
-      
+
       if (lat && lng) {
         const marker = L.marker([lat, lng])
           .bindPopup(`
@@ -247,10 +259,36 @@ const updateMapMarkers = async () => {
             </div>
           `)
           .addTo(map.value)
-        
+
         markers.value.set(getVehicleId(location), marker)
       }
     })
+
+    // Si showRoutes está activo, dibujar rutas
+    if (showRoutes.value) {
+      // Agrupar ubicaciones por vehículo
+      const grouped = {}
+      filteredLocations.value.forEach(loc => {
+        const vehicleId = getVehicleId(loc)
+        if (!vehicleId) return
+        if (!grouped[vehicleId]) grouped[vehicleId] = []
+        grouped[vehicleId].push(loc)
+      })
+
+      // Para cada vehículo dibujar polyline
+      Object.entries(grouped).forEach(([vehicleId, locs]) => {
+        // Ordenar por fecha ascendente
+        locs.sort((a, b) => new Date(a.timestamp || a.timestamp_gps || a.updatedAt) - new Date(b.timestamp || b.timestamp_gps || b.updatedAt))
+
+        const latlngs = locs.map(loc => [loc.latitude || loc.latitud, loc.longitude || loc.longitud]).filter(coord => coord[0] && coord[1])
+
+        if (latlngs.length > 1) {
+          const polyline = L.polyline(latlngs, { color: 'blue' }).addTo(map.value)
+          polylines.value.set(vehicleId, polyline)
+        }
+      })
+    }
+
   } catch (error) {
     console.error('Error updating markers:', error)
   }
@@ -265,7 +303,7 @@ const toggleAutoRefresh = () => {
   autoRefresh.value = !autoRefresh.value
   
   if (autoRefresh.value) {
-    refreshInterval = setInterval(fetchData, 30000) // Actualizar cada 30 segundos
+    refreshInterval = setInterval(fetchData, 5000) 
     toast.success('Auto-actualización activada')
   } else {
     if (refreshInterval) {
@@ -281,12 +319,12 @@ const filterVehicles = () => {
 }
 
 const focusVehicle = (location) => {
-  if (!map.value) return
-  
-  const lat = location.latitude || location.latitud
-  const lng = location.longitude || location.longitud
-  
-  if (lat && lng) {
+  if (!map.value || !map.value._container) return 
+
+  const lat = Number(location.latitude || location.latitud)
+  const lng = Number(location.longitude || location.longitud)
+
+  if (isFinite(lat) && isFinite(lng)) {
     map.value.setView([lat, lng], 15)
     const marker = markers.value.get(getVehicleId(location))
     if (marker) {
@@ -295,22 +333,24 @@ const focusVehicle = (location) => {
   }
 }
 
+
 const centerMap = async () => {
-  if (!map.value) return
-  
+  if (!map.value || !map.value._container) return
+
   try {
     const L = await import('leaflet')
-    
+
     if (filteredLocations.value.length > 0) {
       const group = new L.featureGroup(Array.from(markers.value.values()))
       map.value.fitBounds(group.getBounds().pad(0.1))
     } else {
-      map.value.setView([20.6767, -103.3475], 10) // Guadalajara, Jalisco
+      map.value.setView([20.6767, -103.3475], 10)
     }
   } catch (error) {
     console.error('Error centering map:', error)
   }
 }
+
 
 // Helper functions para manejar diferentes estructuras de datos
 const getVehicleId = (location) => {
@@ -352,7 +392,10 @@ const getUserName = (location) => {
   if (location.user) {
     return `${location.user.firstName || location.user.nombre || ''} ${location.user.lastName || location.user.apellido || ''}`.trim()
   }
-  // Buscar en la lista de usuarios
+
+  // ✅ Validación defensiva
+  if (!Array.isArray(users.value)) return 'Sin asignar'
+
   const user = users.value.find(u => u.id === getUserId(location))
   return user ? `${user.firstName || user.nombre || ''} ${user.lastName || user.apellido || ''}`.trim() : 'Sin asignar'
 }
