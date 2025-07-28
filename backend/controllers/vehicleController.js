@@ -209,18 +209,31 @@ export const updateVehicle = async (req, res) => {
       engineNumber,
       chassisNumber,
       status,
+      imageUrl, // Suponiendo que la imagen se recibe en la solicitud.
+      latitude,
+      longitude,
     } = req.body;
 
-    const vehicle = await Vehicle.findByPk(id);
+    const vehicle = await Vehicle.findByPk(id, {
+      include: [
+        {
+          model: GpsLocation,
+          as: "locations",
+          separate: true,
+          limit: 1,
+          order: [["gpsTimestamp", "DESC"]], // Obtenemos la última ubicación
+        }
+      ]
+    });
+
     if (!vehicle) {
       return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
-    // Obtenemos la nueva imagen desde multer (req.file)
-    // Si no hay archivo nuevo, mantenemos la imagen actual
-    const image = req.file ? req.file.filename : vehicle.image;
+    // Procesar imagen nueva si viene del formulario
+    const image = req.file ? req.file.filename : imageUrl || vehicle.image;
 
-    // Actualizamos el vehículo (sin latitude y longitude)
+    // Actualizamos el vehículo
     await vehicle.update({
       licensePlate,
       model,
@@ -235,28 +248,36 @@ export const updateVehicle = async (req, res) => {
       image,
     });
 
-    // Si recibimos latitud y longitud, creamos nuevo registro en GpsLocation
-    const { latitude, longitude } = req.body;
+    // Si se reciben latitud y longitud, actualizamos la ubicación
     if (latitude && longitude) {
-      await GpsLocation.create({
-        vehicleId: vehicle.id,
-        latitude,
-        longitude,
-        speed: 0,
-        direction: 0,
-        gpsTimestamp: new Date(),
-      });
+      if (vehicle.locations && vehicle.locations.length > 0) {
+        // Si ya existe una ubicación, actualizamos la última
+        const lastGps = vehicle.locations[0];
+        await lastGps.update({ latitude, longitude, gpsTimestamp: new Date() });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "No existe una ubicación GPS asociada para este vehículo.",
+        });
+      }
     }
+
+    // Devolvemos el vehículo actualizado con la última ubicación
+    const responseData = {
+      ...vehicle.toJSON(),
+      lastGpsLocation: vehicle.locations?.[0] ?? null, // Última ubicación GPS actualizada
+    };
 
     res.status(200).json({
       success: true,
       message: "Vehículo actualizado correctamente",
-      data: vehicle,
+      data: responseData,
     });
   } catch (error) {
     handleError(res, error, "updateVehicle");
   }
 };
+
 
 
 
