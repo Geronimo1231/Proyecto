@@ -464,3 +464,57 @@ export const createLocation = async (req, res) => {
     res.status(500).json({ success: false, message: "Error interno del servidor" })
   }
 }
+
+export const getVehiclesWithLastLocation = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query
+    const offset = (page - 1) * limit
+
+    // Conteo total vehículos
+    const total = await Vehicle.count()
+
+    // Consulta para obtener vehículos con su última ubicación GPS
+    const query = `
+      SELECT v.*,
+        gl.latitude,
+        gl.longitude,
+        gl.speed,
+        gl.direction,
+        gl."gpsTimestamp"
+      FROM "Vehicles" v
+      LEFT JOIN LATERAL (
+        SELECT * FROM "GpsLocations" gl
+        WHERE gl."vehicleId" = v.id
+        ORDER BY gl."gpsTimestamp" DESC
+        LIMIT 1
+      ) gl ON true
+      ORDER BY v."createdAt" DESC
+      LIMIT :limit OFFSET :offset
+    `
+
+    const vehiclesWithLastGps = await sequelize.query(query, {
+      replacements: { limit: Number(limit), offset: Number(offset) },
+      type: sequelize.QueryTypes.SELECT,
+    })
+
+    res.status(200).json({
+      success: true,
+      data: {
+        vehicles: vehiclesWithLastGps,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+    })
+  }
+}
+

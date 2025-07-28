@@ -1,13 +1,13 @@
 import { Vehicle, User, Assignment } from "../models/index.js"
 import pkg from "../config/config.cjs"
 const { logger } = pkg
-import { Op } from "sequelize"
+import { Op } from 'sequelize'
+import GpsLocation from "../models/GpsLocation.js"
+
 import { error } from "console"
 
 // Función para manejar errores
 const handleError = (res, error, context) => {
-  logger.error(`Error en ${context}:`, error)
-
   const errorMessage = error && (error.message || error.toString()) || "Unknown error"
 
   res.status(400).json({
@@ -20,11 +20,18 @@ const handleError = (res, error, context) => {
 
 export const getAllVehicles = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", status = "", brand = "" } = req.query
-    const offset = (page - 1) * limit
+    const { page = "1", limit = "10", search = "", status = "", brand = "" } = req.query
+
+    let pageNum = parseInt(page)
+    let limitNum = parseInt(limit)
+
+    if (isNaN(pageNum) || pageNum < 1) pageNum = 1
+    if (isNaN(limitNum) || limitNum < 1) limitNum = 10
+
+    const offset = (pageNum - 1) * limitNum
 
     const whereClause = {
-      "deletedAt": null
+      deletedAt: null,
     }
 
     if (search) {
@@ -52,29 +59,49 @@ export const getAllVehicles = async (req, res) => {
           attributes: ["id", "firstName", "lastName", "email"],
           required: false,
         },
+        {
+          model: GpsLocation,
+          as: "locations",
+          separate: true,
+          limit: 1,
+          order: [["gpsTimestamp", "DESC"]],
+          attributes: ["latitude", "longitude", "speed", "direction", "gpsTimestamp"],
+          required: false,
+        },
       ],
-      limit: Number.parseInt(limit),
-      offset: Number.parseInt(offset),
+      limit: limitNum,
+      offset: offset,
       order: [["createdAt", "DESC"]],
     })
+
+    const vehiclesWithLastGps = vehicles.map(vehicle => {
+      const gpsArray = Array.isArray(vehicle.locations) ? vehicle.locations : []
+      const lastGps = gpsArray.length > 0 ? gpsArray[0] : null
+      return {
+        ...vehicle.toJSON(),
+        lastGpsLocation: lastGps,
+      }
+    })
+
 
     res.status(200).json({
       success: true,
       data: {
-        vehicles,
+        vehicles: vehiclesWithLastGps,
         pagination: {
           total: count,
-          page: Number.parseInt(page),
-          limit: Number.parseInt(limit),
-          totalPages: Math.ceil(count / limit),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(count / limitNum),
         },
       },
     })
-
   } catch (error) {
     handleError(res, error, 'getAllVehicles')
   }
 }
+
+
 
 export const getVehicleById = async (req, res) => {
   try {
@@ -121,9 +148,7 @@ export const getVehicleById = async (req, res) => {
 
 export const createVehicle = async (req, res) => {
   try {
-    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, imageUrl } = req.body
-
-    const image = req.body.photo || null // lo que multer deja como URL
+    const { licensePlate, model, brand, year, type, color, mileage, engineNumber, chassisNumber, imageUrl, latitude, longitude } = req.body
 
     const existingVehicle = await Vehicle.findOne({ where: { licensePlate } })
     if (existingVehicle) {
@@ -147,6 +172,17 @@ export const createVehicle = async (req, res) => {
       image: imageUrl || null,
     })
 
+    // Si envían latitud y longitud, guarda la ubicación
+    if (latitude && longitude) {
+      await GpsLocation.create({
+        vehicleId: vehicle.id,
+        latitude,
+        longitude,
+        speed: 0,
+        direction: 0,
+        gpsTimestamp: new Date(),
+      })
+    }
 
     res.status(200).json({
       success: true,
@@ -173,7 +209,6 @@ export const updateVehicle = async (req, res) => {
       engineNumber,
       chassisNumber,
       status,
-      oldImage // recibe nombre o ruta de imagen anterior para borrar
     } = req.body;
 
     const vehicle = await Vehicle.findByPk(id);
@@ -181,9 +216,11 @@ export const updateVehicle = async (req, res) => {
       return res.status(404).json({ success: false, message: "Vehículo no encontrado" });
     }
 
-    // La URL de la nueva imagen viene de req.body.photo que setea el middleware multer
-    const image = req.body.photo || vehicle.image;
+    // Obtenemos la nueva imagen desde multer (req.file)
+    // Si no hay archivo nuevo, mantenemos la imagen actual
+    const image = req.file ? req.file.filename : vehicle.image;
 
+    // Actualizamos el vehículo (sin latitude y longitude)
     await vehicle.update({
       licensePlate,
       model,
@@ -198,6 +235,19 @@ export const updateVehicle = async (req, res) => {
       image,
     });
 
+    // Si recibimos latitud y longitud, creamos nuevo registro en GpsLocation
+    const { latitude, longitude } = req.body;
+    if (latitude && longitude) {
+      await GpsLocation.create({
+        vehicleId: vehicle.id,
+        latitude,
+        longitude,
+        speed: 0,
+        direction: 0,
+        gpsTimestamp: new Date(),
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Vehículo actualizado correctamente",
@@ -207,6 +257,7 @@ export const updateVehicle = async (req, res) => {
     handleError(res, error, "updateVehicle");
   }
 };
+
 
 
 

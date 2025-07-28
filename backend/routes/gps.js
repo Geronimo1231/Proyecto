@@ -9,6 +9,7 @@ import {
   bulkCreateGpsLocations,
   createLocation,
   simulateVehicleMovements,
+  getVehiclesWithLastLocation,
 } from "../controllers/gpsController.js"
 import { authenticateToken, requireRole } from "../middleware/auth.js"
 
@@ -31,6 +32,8 @@ router.get("/user/locations", authenticateToken, getUserVehicleLocations)
 
 // Simulación (si es solo para testeo/dev)
 router.post('/locations/simulate', simulateVehicleMovements)
+//
+router.get("/vehicles-with-last-location",authenticateToken,requireRole("Admin"),getVehiclesWithLastLocation)
 
 
 export default router

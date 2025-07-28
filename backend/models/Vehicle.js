@@ -78,4 +78,11 @@ Vehicle.belongsTo(User, { foreignKey: "assignedTo", as: "assignedUser" });
 User.hasMany(Vehicle, { foreignKey: "assignedTo", as: "userAssignedVehicles" }); 
 
 
+import GpsLocation from "../models/GpsLocation.js"
+
+Vehicle.hasMany(GpsLocation, { foreignKey: "vehicleId", as: "locations" })
+GpsLocation.belongsTo(Vehicle, { foreignKey: "vehicleId" })
+
+
+
 export default Vehicle;

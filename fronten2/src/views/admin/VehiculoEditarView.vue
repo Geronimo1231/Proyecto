@@ -139,7 +139,37 @@
           <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
               <h3 class="text-lg font-medium text-gray-900 mb-4">Información Adicional</h3>
-              
+              <!-- Ubicación GPS -->
+              <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                  <h3 class="text-lg font-medium text-gray-900 mb-4">Ubicación GPS</h3>
+                  
+                  <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Latitud</label>
+                      <input
+                        v-model="form.latitude"
+                        type="number"
+                        step="any"
+                        placeholder="Ej. -34.6037"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
+                      <input
+                        v-model="form.longitude"
+                        type="number"
+                        step="any"
+                        placeholder="Ej. -58.3816"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Número de Motor</label>
@@ -235,8 +265,6 @@ import { TruckIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 
-
-
 const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const route = useRoute()
@@ -262,37 +290,27 @@ const form = ref({
   mileage: 0,
   status: 'available',
   engineNumber: '',
-  chassisNumber: ''
+  chassisNumber: '',
+  latitude: null,     // ✅ NUEVO
+  longitude: null     // ✅ NUEVO
 })
 
 const fetchData = async () => {
   try {
     loading.value = true
-    
-    // Cargar datos en paralelo
-    const requests = [
+
+    const [vehicleRes, marcasRes, tiposRes] = await Promise.all([
       api.get(`/vehicles/${vehicleId}`),
       api.get('/brands').catch(() => ({ data: { data: [] } })),
       api.get('/vehicle-types').catch(() => ({ data: { data: [] } }))
-    ]
-    
-    const [vehicleRes, marcasRes, tiposRes] = await Promise.all(requests)
-    
-    // Procesar respuesta del vehículo
-    if (vehicleRes.data.success) {
-      vehicle.value = vehicleRes.data.data
-    } else {
-      vehicle.value = vehicleRes.data.data || vehicleRes.data
-    }
-    
-    // Procesar marcas
+    ])
+
+    vehicle.value = vehicleRes.data.data
     marcas.value = marcasRes.data.data || []
-    
-    // Procesar tipos de vehículo
     tiposVehicle.value = tiposRes.data.data || []
-    
-    // Llenar el formulario con los datos del vehículo
+
     if (vehicle.value) {
+      const lastGps = vehicle.value.lastGpsLocation || {}
       form.value = {
         licensePlate: vehicle.value.licensePlate || '',
         brand: vehicle.value.brand || '',
@@ -303,7 +321,9 @@ const fetchData = async () => {
         mileage: vehicle.value.mileage || 0,
         status: vehicle.value.status || 'available',
         engineNumber: vehicle.value.engineNumber || '',
-        chassisNumber: vehicle.value.chassisNumber || ''
+        chassisNumber: vehicle.value.chassisNumber || '',
+        latitude: lastGps.latitude || null,
+        longitude: lastGps.longitude || null
       }
     }
   } catch (error) {
@@ -317,17 +337,13 @@ const fetchData = async () => {
 
 const handleImageChange = (event) => {
   const file = event.target.files[0]
-  console.log('Archivo seleccionado:', file)
-  
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
       toast.error('La imagen no puede ser mayor a 5MB')
       selectedFile.value = null
       return
     }
-    
     selectedFile.value = file
-
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target.result
@@ -339,31 +355,23 @@ const handleImageChange = (event) => {
   }
 }
 
-
-
 const updateVehicle = async () => {
   try {
     saving.value = true
-
     const formData = new FormData()
-    Object.keys(form.value).forEach(key => {
-      if (form.value[key] !== null && form.value[key] !== undefined) {
-        formData.append(key, form.value[key])
+    for (const key in form.value) {
+      const val = form.value[key]
+      if (val !== null && val !== '' && val !== undefined) {
+        formData.append(key, val)
       }
-    })
+    }
 
     if (vehicle.value?.image) {
       formData.append('oldImage', vehicle.value.image)
     }
 
-    console.log('Archivo a enviar:', selectedFile.value)
-
     if (selectedFile.value) {
       formData.append('image', selectedFile.value)
-    }
-
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1])
     }
 
     const response = await api.put(`/vehicles/${vehicleId}`, formData)
@@ -381,9 +389,6 @@ const updateVehicle = async () => {
     saving.value = false
   }
 }
-
-
-
 
 onMounted(() => {
   fetchData()
