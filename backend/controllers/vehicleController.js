@@ -197,6 +197,9 @@ export const createVehicle = async (req, res) => {
 
 export const updateVehicle = async (req, res) => {
   try {
+//console.log('......')
+//console.log(req.body)
+
     const { id } = req.params;
     const {
       licensePlate,
@@ -209,10 +212,13 @@ export const updateVehicle = async (req, res) => {
       engineNumber,
       chassisNumber,
       status,
-      imageUrl, // Suponiendo que la imagen se recibe en la solicitud.
+      image, // Suponiendo que la imagen se recibe en la solicitud.
       latitude,
       longitude,
     } = req.body;
+
+    console.log('------')
+    console.log(req.body.image)
 
     const vehicle = await Vehicle.findByPk(id, {
       include: [
@@ -231,7 +237,8 @@ export const updateVehicle = async (req, res) => {
     }
 
     // Procesar imagen nueva si viene del formulario
-    const image = req.file ? req.file.filename : imageUrl || vehicle.image;
+    //const image = imageUrl ?? '' //req.file ? req.file.filename : imageUrl || vehicle.image;
+
 
     // Actualizamos el vehículo
     await vehicle.update({
