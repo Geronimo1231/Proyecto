@@ -193,7 +193,7 @@ const fetchData = async () => {
     const [locationRes, userRes, vehicleRes] = await Promise.all([
       api.get('/gps/locations'),     
       api.get('/users'),             
-      api.get('/vehicles', { params: { page: 1, limit: 10 } })
+      api.get('/vehicles', { params: { page: 1, limit: 10 } })  
     ])
 
     locations.value = Array.isArray(locationRes.data.data) ? locationRes.data.data : []
@@ -216,30 +216,26 @@ const fetchData = async () => {
 
 const polylines = ref(new Map())
 
-const getVehicleAssignment = (vehicleId) => {
-  const vehicle = vehicles.value.find(v => v.id === vehicleId);
-  return vehicle?.assigned || false; // Verifica si el vehículo está asignado
-}
-
 const updateMapMarkers = async () => {
-  if (!map.value) return;
+  if (!map.value) return
   try {
-    const L = await import('leaflet');
-    
-    const activeVehicleIds = new Set();
+    const L = await import('leaflet')
+
+    const activeVehicleIds = new Set()
 
     filteredLocations.value.forEach(location => {
-      const vehicleId = getVehicleId(location);
-      if (!vehicleId || !getVehicleAssignment(vehicleId)) return; // Filtrar vehículos no asignados
+      const vehicleId = getVehicleId(location)
+      if (!vehicleId) return
 
-      activeVehicleIds.add(vehicleId);
+      activeVehicleIds.add(vehicleId)
 
-      const lat = location.latitude || location.latitud;
-      const lng = location.longitude || location.longitud;
+      const lat = location.latitude || location.latitud
+      const lng = location.longitude || location.longitud
 
-      if (lat === undefined || lng === undefined) return;
+      if (lat === undefined || lng === undefined) return
 
-      const existingMarker = markers.value.get(vehicleId);
+      const existingMarker = markers.value.get(vehicleId)
+
       const popupContent = `
         <div class="p-2">
           <h3 class="font-bold">${getVehiclePlate(location)}</h3>
@@ -248,39 +244,63 @@ const updateMapMarkers = async () => {
           <p><strong>Velocidad:</strong> ${location.speed || location.velocidad || 0} km/h</p>
           <p><strong>Actualizado:</strong> ${formatDate(location.timestamp || location.timestamp_gps || location.updatedAt)}</p>
         </div>
-      `;
+      `
 
       if (existingMarker) {
         // Mover marcador si cambió la posición
-        const currentLatLng = existingMarker.getLatLng();
+        const currentLatLng = existingMarker.getLatLng()
         if (currentLatLng.lat !== lat || currentLatLng.lng !== lng) {
-          existingMarker.setLatLng([lat, lng]);
+          existingMarker.setLatLng([lat, lng])
         }
         // Actualizar contenido del popup
-        existingMarker.setPopupContent(popupContent);
+        existingMarker.setPopupContent(popupContent)
       } else {
         // Crear marcador nuevo
         const marker = L.marker([lat, lng])
           .bindPopup(popupContent)
-          .addTo(map.value);
+          .addTo(map.value)
 
-        markers.value.set(vehicleId, marker);
+        markers.value.set(vehicleId, marker)
       }
-    });
+    })
 
     // Eliminar marcadores que ya no están en la lista filtrada
     markers.value.forEach((marker, vehicleId) => {
       if (!activeVehicleIds.has(vehicleId)) {
-        map.value.removeLayer(marker);
-        markers.value.delete(vehicleId);
+        map.value.removeLayer(marker)
+        markers.value.delete(vehicleId)
       }
-    });
+    })
+
+    // Polylines (si usas rutas)
+    polylines.value.forEach(line => {
+      map.value.removeLayer(line)
+    })
+    polylines.value.clear()
+
+    if (showRoutes.value) {
+      const grouped = {}
+      filteredLocations.value.forEach(loc => {
+        const vid = getVehicleId(loc)
+        if (!vid) return
+        if (!grouped[vid]) grouped[vid] = []
+        grouped[vid].push(loc)
+      })
+
+      Object.entries(grouped).forEach(([vehicleId, locs]) => {
+        locs.sort((a, b) => new Date(a.timestamp || a.timestamp_gps || a.updatedAt) - new Date(b.timestamp || b.timestamp_gps || b.updatedAt))
+        const latlngs = locs.map(loc => [loc.latitude || loc.latitud, loc.longitude || loc.longitud]).filter(coord => coord[0] && coord[1])
+        if (latlngs.length > 1) {
+          const polyline = L.polyline(latlngs, { color: 'blue' }).addTo(map.value)
+          polylines.value.set(vehicleId, polyline)
+        }
+      })
+    }
 
   } catch (error) {
-    console.error('Error updating markers:', error);
+    console.error('Error updating markers:', error)
   }
 }
-
 
 
 
@@ -290,19 +310,19 @@ const refreshLocations = async () => {
 }
 
 const toggleAutoRefresh = () => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-    refreshInterval = null
-  }
   autoRefresh.value = !autoRefresh.value
+  
   if (autoRefresh.value) {
-    refreshInterval = setInterval(fetchData, 5000)
+    refreshInterval = setInterval(fetchData, 5000) 
     toast.success('Auto-actualización activada')
   } else {
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+      refreshInterval = null
+    }
     toast.info('Auto-actualización desactivada')
   }
 }
-
 
 const filterVehicles = () => {
   updateMapMarkers()
