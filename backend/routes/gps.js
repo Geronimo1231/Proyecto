@@ -16,19 +16,21 @@ const router = express.Router()
 
 router.post('/', authenticateToken, requireRole('Admin'), createLocation)
 
-
-// Rutas públicas (requieren autenticación)
+// GPS Locations
 router.get("/locations", authenticateToken, getAllVehicleLocations)
-router.get("/user/locations", authenticateToken, getUserVehicleLocations)
+router.post("/locations", authenticateToken, requireRole("Admin"), createGpsLocation)
+router.post("/locations/bulk", authenticateToken, requireRole("Admin"), bulkCreateGpsLocations)
+router.delete("/locations/cleanup", authenticateToken, requireRole("Admin"), deleteOldLocations)
+
+// Por vehículo
 router.get("/vehicle/:vehicleId", authenticateToken, getVehicleLocations)
 router.get("/vehicle/:vehicleId/latest", authenticateToken, getLatestVehicleLocation)
 
-// Rutas de administrador
-router.post("/locations", authenticateToken, requireRole("Admin"), createGpsLocation)
-router.post("/locations/bulk", authenticateToken, requireRole("Admin"), bulkCreateGpsLocations)
-router.delete("/cleanup", authenticateToken, requireRole("Admin"), deleteOldLocations)
+// Por usuario
+router.get("/user/locations", authenticateToken, getUserVehicleLocations)
 
-// Ruta para simular movimientos
-router.post('/simulate', simulateVehicleMovements)
+// Simulación (si es solo para testeo/dev)
+router.post('/locations/simulate', simulateVehicleMovements)
+
 
 export default router

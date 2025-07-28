@@ -155,17 +155,14 @@ export const getAllVehicleLocations = async (req, res) => {
 
       const resultsRaw = await sequelize.query(query, {
         replacements: { limit: Number(limit) },
-        type: sequelize.QueryTypes.SELECT,  // <-- Asegura que devuelve array de objetos
+        type: sequelize.QueryTypes.SELECT,
       })
 
-      console.log('resultsRaw:', resultsRaw)  // Mira qué recibes aquí
-
-      // Ahora resultsRaw debería ser un array, así que:
       const vehicleIds = resultsRaw.map(loc => loc.vehicleId)
 
-     const locations = await GpsLocation.findAll({
-  where: { vehicleId: { [Op.in]: vehicleIds } },
-          include: [
+      const locations = await GpsLocation.findAll({
+        where: { vehicleId: { [Op.in]: vehicleIds } },
+        include: [
           {
             model: Vehicle,
             as: "vehicle",
@@ -190,45 +187,39 @@ export const getAllVehicleLocations = async (req, res) => {
             ],
           },
         ],
-  order: [["gpsTimestamp", "DESC"]],
-})
-
-
-      return res.status(200).json({
-        success: true,
-        data: locations,
+        order: [["gpsTimestamp", "DESC"]],
       })
+
+      return res.status(200).json({ success: true, data: locations })
     } else {
       const locations = await GpsLocation.findAll({
-  where: { vehicleId: { [Op.in]: vehicleIds } },
-  include: [
-    {
-      model: Vehicle,
-      as: "vehicle",
-      attributes: ["id", "licensePlate", "model", "brand", "status"],
-      include: [
-        {
-          model: Assignment,
-          as: "assignments",
-          required: false,
-          where: { isActive: true },
-          include: [
-            {
-              model: User,
-              as: "user",
-              attributes: ["id", "firstName", "lastName"],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-  order: [["gpsTimestamp", "DESC"]],
-})
-      return res.status(200).json({
-        success: true,
-        data: locations,
+        include: [
+          {
+            model: Vehicle,
+            as: "vehicle",
+            attributes: ["id", "licensePlate", "model", "brand", "status"],
+            include: [
+              {
+                model: Assignment,
+                as: "assignments",
+                required: false,
+                where: { isActive: true },
+                include: [
+                  {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "firstName", "lastName"],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        order: [["gpsTimestamp", "DESC"]],
+        limit: Number(limit),
       })
+
+      return res.status(200).json({ success: true, data: locations })
     }
   } catch (error) {
     console.error("Error en getAllVehicleLocations:", error)

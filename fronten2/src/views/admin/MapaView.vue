@@ -190,36 +190,27 @@ const fetchData = async () => {
   try {
     loading.value = true
 
-    // Simular ubicaciones random para 5 vehículos
-    const fakeLocations = []
-    for (let i = 1; i <= 5; i++) {
-      // Coordenadas random cerca de un centro (ejemplo: Guadalajara)
-      const lat = 20.6597 + (Math.random() - 0.5) * 0.02
-      const lng = -103.3496 + (Math.random() - 0.5) * 0.02
-      const timestamp = new Date(Date.now() - Math.random() * 60000).toISOString()
-      fakeLocations.push({
-        vehicleId: i,
-        latitude: lat,
-        longitude: lng,
-        speed: Math.floor(Math.random() * 80),
-        timestamp
-      })
-    }
+    const [locationRes, userRes, vehicleRes] = await Promise.all([
+      api.get('/gps/locations'),     
+      api.get('/users'),             
+      api.get('/vehicles')           
+    ])
 
-    // Puedes simular users y vehicles estáticos o vacíos
-    locations.value = fakeLocations
-    users.value = []   
-    vehicles.value = [] 
+    locations.value = Array.isArray(locationRes.data.data) ? locationRes.data.data : []
+    users.value = Array.isArray(userRes.data.data) ? userRes.data.data : []
+    vehicles.value = Array.isArray(vehicleRes.data.data) ? vehicleRes.data.data : []
+
 
     await updateMapMarkers()
 
   } catch (error) {
     console.error('Error fetching data:', error)
-    toast.error('Error al cargar las ubicaciones')
+    toast.error('Error al cargar los datos reales')
   } finally {
     loading.value = false
   }
 }
+
 
 
 
