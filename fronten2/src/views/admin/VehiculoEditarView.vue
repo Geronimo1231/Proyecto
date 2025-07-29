@@ -381,7 +381,7 @@ const updateVehicle = async () => {
 
     if (response.data.success || response.status === 200) {
       toast.success('Vehículo actualizado correctamente')
-      router.push(`/admin/vehiculos/${vehicleId}`)
+      router.push('/admin/vehiculos')
     } else {
       throw new Error(response.data.message || 'Error al actualizar')
     }

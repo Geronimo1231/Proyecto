@@ -227,12 +227,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'    // <--- import
 import { TruckIcon, MapPinIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const router = useRouter()  // <--- define router
 
 const authStore = useAuthStore()
 
@@ -256,6 +259,9 @@ const fetchUserData = async () => {
   } catch (error) {
     console.error('Error al cargar los datos:', error)
     toast.error('Error al cargar los datos')
+
+    // Si quieres redirigir al login en caso de error auth, por ejemplo:
+    // router.push('/login')
   }
 }
 

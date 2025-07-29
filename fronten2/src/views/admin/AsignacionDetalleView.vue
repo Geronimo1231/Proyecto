@@ -62,13 +62,7 @@
                 <dt class="text-sm font-medium text-gray-500">ID de Asignación</dt>
                 <dd class="mt-1 text-sm text-gray-900">{{ assignment?.id || 'N/A' }}</dd>
               </div>
-              
-              <div>
-                <dt class="text-sm font-medium text-gray-500">Fecha de Asignación</dt>
-                <dd class="mt-1 text-sm text-gray-900">
-                  {{ assignment?.assignedAt ? formatDate(assignment.assignedAt) : 'N/A' }}
-                </dd>
-              </div>
+     
               
               <div>
                 <dt class="text-sm font-medium text-gray-500">Fecha de Finalización</dt>
@@ -98,11 +92,6 @@
             <h3 class="text-lg font-medium text-gray-900 mb-4">Usuario Asignado</h3>
             
             <div v-if="assignment?.user" class="flex items-start space-x-4">
-              <img
-                :src="assignment.user.photo || '/placeholder.svg?height=80&width=80'"
-                :alt="assignment.user.firstName"
-                class="w-16 h-16 rounded-full object-cover"
-              />
               <div class="flex-1">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                   <div>
@@ -142,11 +131,6 @@
             <h3 class="text-lg font-medium text-gray-900 mb-4">Vehículo Asignado</h3>
             
             <div v-if="assignment?.vehicle" class="flex items-start space-x-4">
-              <img
-                :src="assignment.vehicle.image || '/placeholder.svg?height=80&width=120'"
-                :alt="assignment.vehicle.licensePlate"
-                class="w-20 h-16 rounded object-cover"
-              />
               <div class="flex-1">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                   <div>
@@ -211,25 +195,6 @@
               >
                 Volver a Asignaciones
               </router-link>
-              
-              <button
-                v-if="assignment?.isActive"
-                @click="toggleAssignmentStatus"
-                :disabled="updating"
-                class="w-full bg-yellow-600 text-white px-3 py-2 rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
-              >
-                {{ updating ? 'Procesando...' : 'Desactivar Asignación' }}
-              </button>
-              
-              <button
-                v-else
-                @click="toggleAssignmentStatus"
-                :disabled="updating"
-                class="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50"
-              >
-                {{ updating ? 'Procesando...' : 'Reactivar Asignación' }}
-              </button>
-              
               <button
                 @click="deleteAssignment"
                 :disabled="deleting"
@@ -280,6 +245,8 @@ import { toast } from 'vue3-toastify'
 
 const route = useRoute()
 const router = useRouter()
+
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const assignmentId = route.params.id
 const assignment = ref(null)

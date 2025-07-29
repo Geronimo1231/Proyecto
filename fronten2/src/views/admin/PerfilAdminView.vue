@@ -60,98 +60,10 @@
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
               </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Perfil</label>
-                <div class="mt-1 flex items-center space-x-4">
-                  <img
-                    class="h-12 w-12 rounded-full"
-                    :src="profileForm.photo || '/placeholder.svg?height=48&width=48'"
-                    :alt="profileForm.firstName"
-                  />
-                  <input
-                    ref="photoInput"
-                    type="file"
-                    accept="image/*"
-                    @change="handlePhotoChange"
-                    class="hidden"
-                  />
-                  <button
-                    type="button"
-                    @click="$refs.photoInput.click()"
-                    class="bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cambiar foto
-                  </button>
-                </div>
-              </div>
-              
-              <div class="flex justify-end">
-                <button
-                  type="submit"
-                  :disabled="profileLoading"
-                  class="bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  {{ profileLoading ? 'Guardando...' : 'Guardar Cambios' }}
-                </button>
-              </div>
             </form>
           </div>
         </div>
 
-        <!-- Change Password -->
-        <div class="bg-white shadow rounded-lg mt-6">
-          <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Cambiar Contraseña</h3>
-            
-            <form @submit.prevent="changePassword" class="space-y-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual *</label>
-                <input
-                  v-model="passwordForm.currentPassword"
-                  type="password"
-                  required
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña *</label>
-                <input
-                  v-model="passwordForm.newPassword"
-                  type="password"
-                  required
-                  minlength="8"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-                <p class="mt-1 text-xs text-gray-500">
-                  Mínimo 8 caracteres, incluir mayúscula, minúscula, número y carácter especial
-                </p>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nueva Contraseña *</label>
-                <input
-                  v-model="passwordForm.confirmPassword"
-                  type="password"
-                  required
-                  minlength="8"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-              </div>
-              
-              <div class="flex justify-end">
-                <button
-                  type="submit"
-                  :disabled="passwordLoading"
-                  class="bg-red-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                >
-                  {{ passwordLoading ? 'Cambiando...' : 'Cambiar Contraseña' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       </div>
 
       <!-- Profile Summary -->

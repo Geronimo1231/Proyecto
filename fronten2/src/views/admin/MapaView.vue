@@ -118,9 +118,6 @@
             <p class="text-sm text-gray-600 mb-1">
               {{ getVehicleInfo(location) }}
             </p>
-            <p class="text-sm text-gray-600 mb-2">
-              <strong>Usuario:</strong> {{ getUserName(location) }}
-            </p>
             <div class="text-xs text-gray-500">
               <p><strong>Lat:</strong> {{ Number(location.latitude || location.latitud || 0).toFixed(6) }}</p>
               <p><strong>Lng:</strong> {{ Number(location.longitude || location.longitud || 0).toFixed(6) }}</p>
@@ -322,23 +319,29 @@ const simulateMovement = () => {
 
     if (!isFinite(lat) || !isFinite(lng)) return loc
 
-    // Movimiento aleatorio (±0.0005 grados)
+    // Movimiento aleatorio
     const offsetLat = (Math.random() - 0.5) * 0.001
     const offsetLng = (Math.random() - 0.5) * 0.001
 
     const newLat = lat + offsetLat
     const newLng = lng + offsetLng
 
+    const simulatedSpeed = Math.random() < 0.2 ? 0 : Number((Math.random() * 80 + 10).toFixed(1))
+
     return {
       ...loc,
       latitude: newLat,
       longitude: newLng,
-      timestamp: new Date().toISOString(), // Actualizar tiempo
+      speed: simulatedSpeed,
+      timestamp: new Date().toISOString()
+      // mantenemos los campos originales
     }
   })
 
   updateMapMarkers()
 }
+
+
 
 
 const refreshLocations = async () => {
@@ -429,8 +432,20 @@ const getVehicleInfo = (location) => {
 }
 
 const getUserId = (location) => {
-  return location.userId || location.usuario_id || location.User?.id
+  return (
+    location.userId ||
+    location.usuario_id ||
+    location.User?.id ||
+    location.user?.id ||
+    location.vehicle?.userId ||
+    location.Vehicle?.userId ||
+    // 🔧 Extra: buscar por vehículo
+    vehicles.value.find(v => v.id === getVehicleId(location))?.userId
+  )
 }
+
+
+
 
 const getUserName = (location) => {
   if (location.User) {

@@ -118,7 +118,7 @@ const sidebarOpen = ref(true)
 const showProfileMenu = ref(false)
 
 const navigation = [
-  { name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
+  //{ name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
   { name: 'Mis Vehículos', href: '/user/vehiculos', icon: TruckIcon },
   { name: 'Mapa GPS', href: '/user/mapa', icon: MapPinIcon },
   { name: 'Mi Perfil', href: '/user/perfil', icon: UserIcon }
