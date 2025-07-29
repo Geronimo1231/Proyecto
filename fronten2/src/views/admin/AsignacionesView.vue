@@ -89,9 +89,9 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
-                    <img
-                      class="h-10 w-10 rounded-full object-cover"
-                      :src="getUserPhoto(assignment)"
+                      <img
+                      class="h-10 w-10 rounded-full"
+                      :src="getUserPhoto(assignment) || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'"
                       :alt="getUserName(assignment)"
                     />
                   </div>

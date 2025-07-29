@@ -209,6 +209,8 @@ const fetchData = async () => {
     loading.value = false
   }
 }
+const vehiclePaths = ref(new Map()) // Mapa de historial de ubicaciones
+
 
 
 
@@ -245,6 +247,13 @@ const updateMapMarkers = async () => {
           <p><strong>Actualizado:</strong> ${formatDate(location.timestamp || location.timestamp_gps || location.updatedAt)}</p>
         </div>
       `
+
+        
+        // Guardar historial de ubicaciones para trazo
+          if (!vehiclePaths.value.has(vehicleId)) {
+            vehiclePaths.value.set(vehicleId, [])
+          }
+          vehiclePaths.value.get(vehicleId).push([lat, lng])
 
       if (existingMarker) {
         // Mover marcador si cambió la posición
@@ -290,10 +299,14 @@ const updateMapMarkers = async () => {
       Object.entries(grouped).forEach(([vehicleId, locs]) => {
         locs.sort((a, b) => new Date(a.timestamp || a.timestamp_gps || a.updatedAt) - new Date(b.timestamp || b.timestamp_gps || b.updatedAt))
         const latlngs = locs.map(loc => [loc.latitude || loc.latitud, loc.longitude || loc.longitud]).filter(coord => coord[0] && coord[1])
-        if (latlngs.length > 1) {
-          const polyline = L.polyline(latlngs, { color: 'blue' }).addTo(map.value)
-          polylines.value.set(vehicleId, polyline)
-        }
+        if (showRoutes.value) {
+            vehiclePaths.value.forEach((path, vehicleId) => {
+              if (path.length > 1) {
+                const polyline = L.polyline(path, { color: 'blue' }).addTo(map.value)
+                polylines.value.set(vehicleId, polyline)
+              }
+            })
+          }
       })
     }
 
@@ -302,6 +315,30 @@ const updateMapMarkers = async () => {
   }
 }
 
+const simulateMovement = () => {
+  locations.value = locations.value.map(loc => {
+    let lat = parseFloat(loc.latitude || loc.latitud)
+    let lng = parseFloat(loc.longitude || loc.longitud)
+
+    if (!isFinite(lat) || !isFinite(lng)) return loc
+
+    // Movimiento aleatorio (±0.0005 grados)
+    const offsetLat = (Math.random() - 0.5) * 0.001
+    const offsetLng = (Math.random() - 0.5) * 0.001
+
+    const newLat = lat + offsetLat
+    const newLng = lng + offsetLng
+
+    return {
+      ...loc,
+      latitude: newLat,
+      longitude: newLng,
+      timestamp: new Date().toISOString(), // Actualizar tiempo
+    }
+  })
+
+  updateMapMarkers()
+}
 
 
 const refreshLocations = async () => {
@@ -311,16 +348,16 @@ const refreshLocations = async () => {
 
 const toggleAutoRefresh = () => {
   autoRefresh.value = !autoRefresh.value
-  
+
   if (autoRefresh.value) {
-    refreshInterval = setInterval(fetchData, 5000) 
-    toast.success('Auto-actualización activada')
+    refreshInterval = setInterval(() => {
+      simulateMovement() // ← usamos simulación en vez de fetch real
+    }, 2000) // cada 2 segundos
+    toast.success('Simulación activada')
   } else {
-    if (refreshInterval) {
-      clearInterval(refreshInterval)
-      refreshInterval = null
-    }
-    toast.info('Auto-actualización desactivada')
+    clearInterval(refreshInterval)
+    refreshInterval = null
+    toast.info('Simulación desactivada')
   }
 }
 
