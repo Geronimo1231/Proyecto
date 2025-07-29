@@ -49,12 +49,6 @@
           <div class="px-4 py-5 sm:p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">Información de la Asignación</h3>
-              <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="getStatusClass(assignment?.isActive)"
-              >
-                {{ assignment?.isActive ? 'Activa' : 'Inactiva' }}
-              </span>
             </div>
             
             <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
@@ -73,9 +67,12 @@
               
               <div>
                 <dt class="text-sm font-medium text-gray-500">Estado</dt>
-                <dd class="mt-1 text-sm text-gray-900">
-                  {{ assignment?.isActive ? 'Activa' : 'Finalizada' }}
-                </dd>
+                    <span
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    :class="getStatusClass(assignment?.isActive)"
+                  >
+                    {{ assignment?.isActive ? 'Activa' : 'Inactiva' }}
+                  </span>
               </div>
               
               <div class="sm:col-span-2" v-if="assignment?.notes">

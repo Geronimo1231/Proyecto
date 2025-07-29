@@ -120,7 +120,7 @@ const handleLogin = async () => {
       router.push({name: 'AdminDashboard'})
       //router.push('/admin')
     } else {
-      router.push({name: 'UserDashboard'})
+      router.push({name: 'UserVehiculos'})
     }
   }
 }

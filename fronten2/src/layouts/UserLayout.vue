@@ -1,12 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out" :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
+    <div
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out"
+      :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }"
+    >
       <div class="flex items-center justify-center h-16 bg-green-600">
         <TruckIcon class="h-8 w-8 text-white" />
         <span class="ml-2 text-xl font-semibold text-white">Mi Panel</span>
       </div>
-      
+
       <nav class="mt-8">
         <div class="px-4 space-y-2">
           <router-link
@@ -15,7 +18,7 @@
             :to="item.href"
             class="group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200"
             :class="[
-              $route.path === item.href
+              $route.path.startsWith(item.href)
                 ? 'bg-green-100 text-green-700'
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             ]"
@@ -43,7 +46,7 @@
           <div class="flex flex-1"></div>
           <div class="flex items-center gap-x-4 lg:gap-x-6">
             <!-- Profile dropdown -->
-            <div class="relative">
+            <div class="relative" ref="profileMenuRef">
               <button
                 type="button"
                 class="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
@@ -52,9 +55,9 @@
                 <img
                   class="h-8 w-8 rounded-full bg-gray-50"
                   :src="authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
-                  :alt="`${authStore.user?.firstName} ${authStore.user?.lastName}`"
+                  :alt="authStore.user?.firstName || 'Usuario'"
                 />
-                <span>{{ authStore.user?.firstName }} {{ authStore.user?.lastName }}</span>
+                <span>{{ authStore.user?.firstName || '' }} {{ authStore.user?.lastName || '' }}</span>
                 <ChevronDownIcon class="h-5 w-5 text-gray-400" />
               </button>
 
@@ -102,30 +105,32 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+
 import {
   TruckIcon,
   Bars3Icon,
   ChevronDownIcon,
-  HomeIcon,
   MapPinIcon,
   UserIcon
 } from '@heroicons/vue/24/outline'
 
+// State
 const router = useRouter()
 const authStore = useAuthStore()
 
 const sidebarOpen = ref(true)
 const showProfileMenu = ref(false)
+const profileMenuRef = ref(null)
 
 const navigation = [
-  //{ name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
   { name: 'Mis Vehículos', href: '/user/vehiculos', icon: TruckIcon },
   { name: 'Mapa GPS', href: '/user/mapa', icon: MapPinIcon },
   { name: 'Mi Perfil', href: '/user/perfil', icon: UserIcon }
 ]
 
-const logout = () => {
-  authStore.logout()
+// Events
+const logout = async () => {
+  await authStore.logout()
   router.push('/login')
 }
 
@@ -137,8 +142,13 @@ const closeProfileMenu = () => {
   showProfileMenu.value = false
 }
 
+// Cerrar menú si se hace clic fuera
 const handleClickOutside = (event) => {
-  if (showProfileMenu.value && !event.target.closest('.relative')) {
+  if (
+    showProfileMenu.value &&
+    profileMenuRef.value &&
+    !profileMenuRef.value.contains(event.target)
+  ) {
     showProfileMenu.value = false
   }
 }
