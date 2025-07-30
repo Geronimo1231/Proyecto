@@ -464,3 +464,29 @@ export const getAvailableUsers = async (req, res) => {
     })
   }
 }
+
+// controllers/userController.js
+
+export const updateOwnProfile = async (req, res) => {
+  try {
+    const userId = req.user.id  // Asumiendo que `authenticateToken` agrega user al req
+    const updates = req.body
+
+    // Opcional: No permitir que se cambie rol ni campos protegidos
+    delete updates.role
+    delete updates.isActive
+
+    // Si viene archivo de imagen, procesarlo también
+    if (req.file) {
+      updates.photo = req.file.filename
+    }
+
+    // Actualizar usuario en base de datos
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true })
+
+    res.json({ success: true, user: updatedUser })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Error actualizando perfil" })
+  }
+}

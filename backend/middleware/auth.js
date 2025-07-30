@@ -44,7 +44,7 @@ export const authenticateToken = async (req, res, next) => {
       })
     }
 
-    req.user = user
+    req.user = user.toJSON() // plano, sin getters/setters de Sequelize
     next()
   } catch (error) {
     logger.error("Error en authenticateToken:", error)

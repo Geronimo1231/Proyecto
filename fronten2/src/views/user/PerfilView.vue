@@ -63,26 +63,16 @@
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foto de Perfil</label>
-                <div class="mt-1 flex items-center space-x-4">
-                  <img
-                    class="h-12 w-12 rounded-full"
-                    :src="profileForm.photo || '/placeholder.svg?height=48&width=48'"
-                    :alt="profileForm.firstName"
+                <div class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Imagen del Vehículo (Opcional)
+                </label>
+                  <ImageUploader
+                    v-model="form.image"
+                    :storage-key="`vehicle-create-${Date.now()}`"
+                    @uploaded="handleImageUploaded"
+                    @error="handleImageError"
                   />
-                  <input
-                    ref="photoInput"
-                    type="file"
-                    accept="image/*"
-                    @change="handlePhotoChange"
-                    class="hidden"
-                  />
-                  <button
-                    type="button"
-                    @click="$refs.photoInput.click()"
-                    class="bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cambiar foto
-                  </button>
                 </div>
               </div>
               
@@ -250,6 +240,8 @@ import api from '../../services/api'
 import { toast } from 'vue3-toastify'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import ImageUploader from '@/components/ImageUploader.vue'
+
 
 const authStore = useAuthStore()
 
@@ -265,6 +257,17 @@ const profileForm = ref({
   phone: '',
   photo: ''
 })
+
+const handleImageUploaded = (imageData) => {
+  console.log('Imagen subida:', imageData)
+  form.value.image = imageData.url || imageData // Ajusta según lo que retorne tu uploader
+}
+
+const handleImageError = (error) => {
+  console.error('Error al subir imagen:', error)
+  toast.error('Error al subir la imagen')
+}
+
 
 const passwordForm = ref({
   currentPassword: '',

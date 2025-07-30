@@ -32,7 +32,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Rutas
 import authRoutes from "./routes/auth.js"
-import userRoutes from "./routes/users.js"
+import userRoutes from "./routes/useradmin.js"
 import vehicleRoutes from "./routes/vehicles.js"
 import assignmentRoutes from "./routes/assignments.js"
 import dashboardRoutes from "./routes/dashboard.js"
