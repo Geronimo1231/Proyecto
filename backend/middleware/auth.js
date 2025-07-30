@@ -125,3 +125,30 @@ export const optionalAuth = async (req, res, next) => {
     next()
   }
 }
+
+export const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'No autorizado: token faltante' })
+  }
+
+  const token = authHeader.split(' ')[1]
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    const user = await User.findByPk(decoded.id, {
+      attributes: { exclude: ['password'] },
+    })
+
+    if (!user) {
+      return res.status(401).json({ message: 'No autorizado: usuario no encontrado' })
+    }
+
+    req.user = user
+    next()
+  } catch (error) {
+    return res.status(401).json({ message: 'Token inválido' })
+  }
+}

@@ -166,27 +166,40 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const { id } = req.params
-    const { firstName, lastName, email, phone, role, photo, isActive, password } = req.body
+    let { id } = req.params;
+    const { firstName, lastName, email, phone, role, photo, isActive, password } = req.body;
 
-    const user = await User.findByPk(id)
+    // Reemplazar 'me' por el id del usuario autenticado
+    if (id === 'me') {
+      id = req.user.id;
+    }
+
+    // Si no es admin y está intentando modificar otro usuario, rechazar
+    if (req.user.role !== 'Admin' && id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para actualizar este usuario',
+      });
+    }
+
+    const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Usuario no encontrado",
-      })
+        message: 'Usuario no encontrado',
+      });
     }
 
     // Verificar que el email no esté en uso por otro usuario
     if (email && email !== user.email) {
       const existingUser = await User.findOne({
         where: { email, id: { [Op.ne]: id } },
-      })
+      });
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "El email ya está registrado",
-        })
+          message: 'El email ya está registrado',
+        });
       }
     }
 
@@ -195,36 +208,36 @@ export const updateUser = async (req, res) => {
       lastName: lastName || user.lastName,
       email: email || user.email,
       phone: phone || user.phone,
-      role: role || user.role,
+      // Solo los admins pueden actualizar el rol y el estado
+      role: req.user.role === 'Admin' ? (role || user.role) : user.role,
       photo: photo || user.photo,
-      isActive: isActive !== undefined ? isActive : user.isActive,
-    }
+      isActive: req.user.role === 'Admin' ? (isActive !== undefined ? isActive : user.isActive) : user.isActive,
+    };
 
-    // Solo actualizar password si se proporciona
     if (password) {
-      updateData.password = password
+      updateData.password = password; // Recuerda tener el hook para hashear la contraseña
     }
 
-    await user.update(updateData)
+    await user.update(updateData);
 
-    // Remover password de la respuesta
-    const userResponse = user.toJSON()
-    delete userResponse.password
+    const userResponse = user.toJSON();
+    delete userResponse.password;
 
-   res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Usuario actualizado correctamente",
+      message: 'Usuario actualizado correctamente',
       data: userResponse,
-    })
+    });
   } catch (error) {
-    logger.error("Error en updateUser:", error)
+    console.error('Error en updateUser:', error);
     res.status(500).json({
       success: false,
-      message: "Error interno del servidor",
+      message: 'Error interno del servidor',
       error: error.message,
-    })
+    });
   }
-}
+};
+
 
 export const deleteUser = async (req, res) => {
   try {
@@ -488,5 +501,36 @@ export const updateOwnProfile = async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: "Error actualizando perfil" })
+  }
+}
+
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id)
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' })
+    }
+
+    user.firstName = req.body.firstName || user.firstName
+    user.lastName = req.body.lastName || user.lastName
+    user.email = req.body.email || user.email
+    user.phone = req.body.phone || user.phone
+
+    if (req.body.password) {
+      user.password = req.body.password // Asegúrate que el modelo tiene hook para hash
+    }
+
+    if (req.body.photo && typeof req.body.photo === 'string') {
+      user.photo = req.body.photo
+    }
+
+    await user.save()
+
+    res.status(200).json({ success: true, user })
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error)
+    res.status(500).json({ message: 'Error al actualizar el perfil del usuario' })
   }
 }
