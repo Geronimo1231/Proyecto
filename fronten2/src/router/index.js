@@ -141,7 +141,6 @@ router.beforeEach(async (to, from, next) => {
     if (!authStore.isAuthenticated) {
       return next({ name: "Login" })
     }
-
     // Verificar rol si es necesario
     if (to.meta.requiresRole) {
       if (authStore.user?.role !== to.meta.requiresRole) {

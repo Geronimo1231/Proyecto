@@ -54,7 +54,7 @@
               >
                 <img
                   class="h-8 w-8 rounded-full bg-gray-50"
-                  :src="authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
+                  :src="VITE_APP_IMAGE_URL + authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
                   :alt="authStore.user?.firstName || 'Usuario'"
                 />
                 <span>{{ authStore.user?.firstName || '' }} {{ authStore.user?.lastName || '' }}</span>
@@ -113,6 +113,9 @@ import {
   MapPinIcon,
   UserIcon
 } from '@heroicons/vue/24/outline'
+
+
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 // State
 const router = useRouter()

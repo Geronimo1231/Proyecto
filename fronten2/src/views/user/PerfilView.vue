@@ -202,9 +202,9 @@ const fetchUser = async () => {
   }
 }
 
-const handleImageUploaded = (photoData) => {
-  console.log('Imagen subida:', photoData)
-  form.value.photo = photoData.url || photoData // Ajusta según lo que retorne tu uploader
+const handleImageUploaded = (imageData) => {
+  console.log('Imagen subida:', imageData)
+  form.value.image = imageData.url || imageData // Ajusta según lo que retorne tu uploader
 }
 
 const handleImageError = (error) => {
@@ -222,6 +222,7 @@ const updateUser = async () => {
     saving.value = true
 
     const formData = new FormData()
+    console.log('form', form.value)
 
     Object.keys(form.value).forEach(key => {
       // No enviar confirmPassword ni role (no editable por usuario)
@@ -232,7 +233,7 @@ const updateUser = async () => {
         if (key === 'password' && !form.value[key]) return
 
         // Para la imagen, puede ser string (url) o File
-        if (key === 'photo' && typeof form.value.photo === 'string') {
+        if (key === 'image' && typeof form.value.image === 'string') {
           // Si es url, no la enviamos, porque no es un archivo nuevo
           return
         }

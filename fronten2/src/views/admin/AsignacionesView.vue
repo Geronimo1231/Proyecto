@@ -91,7 +91,7 @@
                   <div class="flex-shrink-0 h-10 w-10">
                     <img
                       class="h-10 w-10 rounded-full object-cover"
-                      :src="getUserPhoto(assignment)"
+                      :src="usuario?.photo (assignment)"
                       :alt="getUserName(assignment)"
                     />
                   </div>
@@ -214,6 +214,9 @@ import { toast } from 'vue3-toastify'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
+
 
 const loading = ref(false)
 const assignments = ref([])
@@ -377,7 +380,6 @@ const getUserPhoto = (assignment) => {
   return VITE_APP_IMAGE_URL + assignment.User?.photo ?? assignment.user?.photo ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'
 }
 
-const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
 
 const getVehiclePlate = (assignment) => {
   const vehicle = assignment.Vehicle ?? assignment.vehicle

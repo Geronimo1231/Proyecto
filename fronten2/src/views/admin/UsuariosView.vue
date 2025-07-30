@@ -81,7 +81,7 @@
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
-                    :src="usuario.photo || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'"
+                    :src="VITE_APP_IMAGE_URL + getPhotoLink(usuario?.photo)"
                     :alt="usuario.firstName"
                   />
                 </div>
@@ -147,6 +147,8 @@ const filters = ref({
   rol: ''
 })
 
+const VITE_APP_IMAGE_URL = import.meta.env.VITE_APP_IMAGE_URL || ""
+
 const filteredUsers = computed(() => {
   return users.value.filter(usuario => {
     const matchesSearch = !filters.value.search || 
@@ -193,6 +195,10 @@ const resetFilters = () => {
     search: '',
     rol: ''
   }
+}
+
+function getPhotoLink(photo) {
+  return photo ? (VITE_APP_IMAGE_URL + photo) : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'
 }
 
 onMounted(() => {

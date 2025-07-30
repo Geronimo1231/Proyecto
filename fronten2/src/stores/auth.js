@@ -8,7 +8,7 @@ import 'vue3-toastify/dist/index.css'
 
 
 export const useAuthStore = defineStore("auth", () => {
-  const user = ref(null)
+  const user = ref(JSON.parse(localStorage.getItem("user")))
   const token = ref(localStorage.getItem("token"))
   const loading = ref(false)
 
@@ -26,6 +26,7 @@ export const useAuthStore = defineStore("auth", () => {
         token.value = response.data.token
         user.value = response.data.user
         localStorage.setItem("token", token.value)
+        localStorage.setItem("user", JSON.stringify(user.value))
 
         // Configurar el token en el header de axios
         api.defaults.headers.common["Authorization"] = `Bearer ${token.value}`
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore("auth", () => {
   const logout = () => {
     user.value = null
     token.value = null
+    localStorage.removeItem("user")
     localStorage.removeItem("token")
     delete api.defaults.headers.common["Authorization"]
     toast.info("Sesión cerrada")
