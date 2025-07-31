@@ -81,7 +81,7 @@
                 <div class="flex-shrink-0 h-10 w-10">
                   <img
                     class="h-10 w-10 rounded-full"
-                    :src="VITE_APP_IMAGE_URL + getPhotoLink(usuario?.photo)"
+                    :src="getPhotoLink(usuario?.photo)"
                     :alt="usuario.firstName"
                   />
                 </div>

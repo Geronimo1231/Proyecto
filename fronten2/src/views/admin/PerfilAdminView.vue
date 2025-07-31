@@ -96,37 +96,6 @@
           </div>
         </div>
 
-        <!-- System Stats -->
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Estadísticas del Sistema</h3>
-            
-            <div class="space-y-3">
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-500">Total Usuarios:</span>
-                <span class="text-sm font-medium text-gray-900">{{ systemStats.totalUsers || 0 }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-500">Total Vehículos:</span>
-                <span class="text-sm font-medium text-gray-900">{{ systemStats.totalVehicles || 0 }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-500">Asignaciones Activas:</span>
-                <span class="text-sm font-medium text-gray-900">{{ systemStats.activeAssignments || 0 }}</span>
-              </div>
-            </div>
-            
-            <div class="mt-4">
-              <router-link
-                to="/admin/dashboard"
-                class="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Ver Dashboard Completo
-              </router-link>
-            </div>
-          </div>
-        </div>
-
         <!-- Quick Actions -->
         <div class="bg-white shadow rounded-lg">
           <div class="px-4 py-5 sm:p-6">

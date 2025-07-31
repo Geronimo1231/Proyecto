@@ -88,13 +88,6 @@
             <tr v-else v-for="assignment in assignments" :key="assignment.id" class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <img
-                      class="h-10 w-10 rounded-full object-cover"
-                      :src="usuario?.photo (assignment)"
-                      :alt="getUserName(assignment)"
-                    />
-                  </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">
                       {{ getUserName(assignment) }}
@@ -375,11 +368,6 @@ const getUserEmail = (assignment) => {
   const user = assignment.User ?? assignment.user
   return user?.email ?? ''
 }
-
-const getUserPhoto = (assignment) => {
-  return VITE_APP_IMAGE_URL + assignment.User?.photo ?? assignment.user?.photo ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&amp;s'
-}
-
 
 const getVehiclePlate = (assignment) => {
   const vehicle = assignment.Vehicle ?? assignment.vehicle

@@ -98,6 +98,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (response.data.success) {
         toast.success("Contraseña cambiada correctamente")
+        await useAuthStore() 
         return { success: true }
       }
     } catch (error) {

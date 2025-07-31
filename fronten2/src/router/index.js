@@ -18,14 +18,12 @@ import UsuarioEditarView from "../views/admin/UsuarioEditarView.vue"
 import AsignacionDetalleView from "../views/admin/AsignacionDetalleView.vue"
 
 import VehiculoCrearView from "../views/admin/VehiculoCrearView.vue"
-import VehiculoDetalleView from "../views/admin/VehiculoDetalleView.vue"
 import VehiculoEditarView from "../views/admin/VehiculoEditarView.vue"
 import AsignacionCrearView from "../views/admin/AsignacionCrearView.vue"
 import PerfilAdminView from "../views/admin/PerfilAdminView.vue"
 
 // Vistas de usuario
 import UserLayout from "../layouts/UserLayout.vue"
-import UserDashboard from "../views/user/DashboardUser.vue"
 import UserMapa from "../views/user/MapaviewUser.vue"
 import UserPerfil from "../views/user/PerfilView.vue"
 import UserVehiculos from "../views/user/VehiculoView.vue"
@@ -58,7 +56,6 @@ const routes = [
       { path: "dashboard", name: "AdminDashboard", component: AdminDashboard },
       { path: "vehiculos", name: "AdminVehiculos", component: AdminVehiculos },
       { path: "vehiculos/crear", name: "VehiculoCrear", component: VehiculoCrearView },
-      { path: "vehiculos/:id", name: "VehiculoDetalle", component: VehiculoDetalleView },
       { path: "vehiculos/:id/editar", name: "VehiculoEditar", component: VehiculoEditarView, props: true },
       { path: "usuarios", name: "AdminUsuarios", component: AdminUsuarios },
       { path: "usuarios/crear", name: "UsuarioCrear", component: UsuarioCrearView },
@@ -78,8 +75,7 @@ const routes = [
     component: UserLayout,
     meta: { requiresAuth: true, requiresRole: "User" },
     children: [
-      { path: "", redirect: "/user/dashboard" },
-      { path: "dashboard", name: "UserDashboard", component: UserDashboard },
+      { path: "", redirect: "/user/vehiculos" },
       { path: "vehiculos", name: "UserVehiculos", component: UserVehiculos },
       { path: "mapa", name: "UserMapa", component: UserMapa },
       { path: "perfil", name: "UserPerfil", component: UserPerfil },
