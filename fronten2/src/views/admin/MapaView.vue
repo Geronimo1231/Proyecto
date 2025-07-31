@@ -34,19 +34,6 @@
     <div class="bg-white shadow rounded-lg p-4">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Usuario</label>
-          <select
-            v-model="selectedUser"
-            @change="filterVehicles"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          >
-            <option value="">Todos los usuarios</option>
-            <option v-for="user in users" :key="user.id" :value="user.id">
-              {{ user.firstName }} {{ user.lastName }}
-            </option>
-          </select>
-        </div>
-        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Vehículo</label>
           <select
             v-model="selectedVehicle"
@@ -239,7 +226,6 @@ const updateMapMarkers = async () => {
         <div class="p-2">
           <h3 class="font-bold">${getVehiclePlate(location)}</h3>
           <p>${getVehicleInfo(location)}</p>
-          <p><strong>Usuario:</strong> ${getUserName(location)}</p>
           <p><strong>Velocidad:</strong> ${location.speed || location.velocidad || 0} km/h</p>
           <p><strong>Actualizado:</strong> ${formatDate(location.timestamp || location.timestamp_gps || location.updatedAt)}</p>
         </div>
