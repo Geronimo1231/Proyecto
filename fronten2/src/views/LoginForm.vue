@@ -113,7 +113,7 @@ const showPassword = ref(false)
 
 const handleLogin = async () => {
   const result = await authStore.login(form.value)
-  
+
   if (result.success) {
     // Redirigir según el rol del usuario
     if (result.user.role === 'Admin') {
@@ -122,6 +122,9 @@ const handleLogin = async () => {
     } else {
       router.push({name: 'UserVehiculos'})
     }
+  } else{
+    console.log('alerta')
+    console.log(result)
   }
 }
 </script>

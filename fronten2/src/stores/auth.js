@@ -31,6 +31,8 @@ export const useAuthStore = defineStore("auth", () => {
         api.defaults.headers.common["Authorization"] = `Bearer ${token.value}`
 
         return { success: true, user: user.value }
+      } else {
+         return { success: false, user: '' }
       }
     } catch (error) {
       const message = error.response?.data?.message || "Error al iniciar sesión"

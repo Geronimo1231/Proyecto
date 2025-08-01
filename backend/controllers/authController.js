@@ -15,7 +15,7 @@ export const login = async (req, res) => {
 
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Gmail es incorrecta",
       });
@@ -23,7 +23,7 @@ export const login = async (req, res) => {
 
   
     if (!user.isActive) {
-      return res.status(403).json({
+      return res.status(400).json({
         success: false,
         message: "Tu cuenta está desactivada. Contacta al administrador.",
       });
@@ -31,7 +31,7 @@ export const login = async (req, res) => {
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Contraseña es incorrecta ",
       });
