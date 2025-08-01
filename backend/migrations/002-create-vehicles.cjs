@@ -65,6 +65,52 @@ module.exports = {
         defaultValue: null,
       },
     })
+
+    // Insertar vehículos de ejemplo
+    await queryInterface.bulkInsert("Vehicles", [
+      {
+        licensePlate: "ABC-123",
+        model: "Corolla",
+        brand: "Toyota",
+        year: 2023,
+        type: "Sedan",
+        status: "available",
+        color: "Blanco",
+        mileage: 15000,
+        engineNumber: "TOY2023001",
+        chassisNumber: "CHASIS001",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        licensePlate: "DEF-456",
+        model: "Civic",
+        brand: "Honda",
+        year: 2022,
+        type: "Sedan",
+        status: "available",
+        color: "Negro",
+        mileage: 25000,
+        engineNumber: "HON2022001",
+        chassisNumber: "CHASIS002",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        licensePlate: "GHI-789",
+        model: "F-150",
+        brand: "Ford",
+        year: 2024,
+        type: "Pickup",
+        status: "available",
+        color: "Azul",
+        mileage: 8000,
+        engineNumber: "FOR2024001",
+        chassisNumber: "CHASIS003",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ])
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("Vehicles")

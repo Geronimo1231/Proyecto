@@ -18,8 +18,9 @@ export const useAuthStore = defineStore("auth", () => {
   const isGlobalAdmin = computed(() => user.value?.role === "GlobalAdmin")
 
   const login = async (credentials) => {
+
     try {
-      loading.value = true
+      //loading.value = true
       const response = await api.post("/auth/login", credentials)
 
       if (response.data.success) {
@@ -27,21 +28,18 @@ export const useAuthStore = defineStore("auth", () => {
         user.value = response.data.user
         localStorage.setItem("token", token.value)
         localStorage.setItem("user", JSON.stringify(user.value))
-
-        // Configurar el token en el header de axios
         api.defaults.headers.common["Authorization"] = `Bearer ${token.value}`
 
-        toast.success("Inicio de sesión exitoso")
         return { success: true, user: user.value }
       }
     } catch (error) {
       const message = error.response?.data?.message || "Error al iniciar sesión"
-      toast.error(message)
       return { success: false, message }
     } finally {
       loading.value = false
     }
   }
+
 
   const logout = () => {
     user.value = null

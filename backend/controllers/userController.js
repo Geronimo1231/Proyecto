@@ -111,58 +111,58 @@ export const getUserById = async (req, res) => {
   }
 }
 
+import bcrypt from 'bcrypt';
+
 export const createUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, role, photo } = req.body
+    const { firstName, lastName, email, phone, password, role, photo } = req.body;
 
-    // Verificar que el email no esté en uso
-    const existingUser = await User.findOne({ where: { email } })
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message: "El email ya está registrado",
-      })
+      });
     }
 
-    // Validar que la contraseña tenga al menos 8 caracteres
     if (!password || password.length < 8) {
       return res.status(400).json({
         success: false,
         message: "La contraseña debe tener al menos 8 caracteres",
-      })
+      });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
       firstName,
       lastName,
       email,
       phone,
-      password, // El hook beforeCreate se encargará de hashearla
+      password,
       role: role || "User",
-      photo: photo || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwVLdSDmgrZN7TkzbHJb8dD0_7ASUQuERL2A&s",
+      photo: null,
       isActive: true,
-    })
+    });
 
-    // Remover password de la respuesta
-    const userResponse = user.toJSON()
-    delete userResponse.password
+    const userResponse = user.toJSON();
+    delete userResponse.password;
 
-    
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Usuario creado correctamente",
       data: userResponse,
-    })
+    });
   } catch (error) {
-    logger.error("Error en createUser:", error)
-    res.status(500).json({
+    console.error("Error en createUser:", error);
+    return res.status(500).json({
       success: false,
       message: "Error interno del servidor",
-      error: error.message,
-    })
+    });
   }
-}
+};
+
+
 
 export const updateUser = async (req, res) => {
   try {

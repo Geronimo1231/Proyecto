@@ -52,11 +52,6 @@
                 class="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900"
                 @click="toggleProfileMenu"
               >
-                <img
-                  class="h-8 w-8 rounded-full bg-gray-50"
-                  :src="VITE_APP_IMAGE_URL + authStore.user?.photo || '/placeholder.svg?height=32&width=32'"
-                  :alt="authStore.user?.firstName || 'Usuario'"
-                />
                 <span>{{ authStore.user?.firstName || '' }} {{ authStore.user?.lastName || '' }}</span>
                 <ChevronDownIcon class="h-5 w-5 text-gray-400" />
               </button>
