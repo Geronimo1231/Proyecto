@@ -23,17 +23,21 @@ export const useAuthStore = defineStore("auth", () => {
       //loading.value = true
       const response = await api.post("/auth/login", credentials)
 
-      if (response.data.success) {
-        token.value = response.data.token
-        user.value = response.data.user
-        localStorage.setItem("token", token.value)
-        localStorage.setItem("user", JSON.stringify(user.value))
-        api.defaults.headers.common["Authorization"] = `Bearer ${token.value}`
+    if (response.data.success) {
+      token.value = response.data.token
+      user.value = response.data.user
+      localStorage.setItem("token", token.value)
+      localStorage.setItem("user", JSON.stringify(user.value))
+      api.defaults.headers.common["Authorization"] = `Bearer ${token.value}`
 
-        return { success: true, user: user.value }
-      } else {
-         return { success: false, user: '' }
+      return { success: true, user: user.value }
+    } else {
+      return {
+        success: false,
+        message: response.data.message || 'Error desconocido',
       }
+    }
+
     } catch (error) {
       const message = error.response?.data?.message || "Error al iniciar sesión"
       return { success: false, message }

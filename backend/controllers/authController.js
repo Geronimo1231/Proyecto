@@ -17,7 +17,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Gmail es incorrecta",
+        message: "El Gmail es incorrecta",
       });
     }
 
@@ -33,7 +33,7 @@ export const login = async (req, res) => {
     if (!isValidPassword) {
       return res.status(400).json({
         success: false,
-        message: "Contraseña es incorrecta ",
+        message: "La Contraseña es incorrecta ",
       });
     }
 

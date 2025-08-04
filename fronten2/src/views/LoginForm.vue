@@ -12,7 +12,7 @@
           Accede a tu cuenta del sistema
         </p>
       </div>
-      
+
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
         <div class="rounded-md shadow-sm space-y-4">
           <div>
@@ -74,6 +74,10 @@
           </button>
         </div>
 
+      <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
+        {{ errorMessage }}
+      </div>
+
         <!-- Credenciales de demostración -->
         <div class="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg">
           <h3 class="text-sm font-medium text-white mb-2">Credenciales de Demostración:</h3>
@@ -101,6 +105,8 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
+
+const errorMessage = ref('')
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -112,19 +118,20 @@ const form = ref({
 const showPassword = ref(false)
 
 const handleLogin = async () => {
+  errorMessage.value = '' // limpiar mensaje anterior
+
   const result = await authStore.login(form.value)
 
   if (result.success) {
-    // Redirigir según el rol del usuario
     if (result.user.role === 'Admin') {
-      router.push({name: 'AdminDashboard'})
-      //router.push('/admin')
+      router.push({ name: 'AdminDashboard' })
     } else {
-      router.push({name: 'UserVehiculos'})
+      router.push({ name: 'UserVehiculos' })
     }
-  } else{
-    console.log('alerta')
-    console.log(result)
+  } else {
+    // Mostrar el mensaje en la interfaz
+    errorMessage.value = result.message || 'Error al iniciar sesión'
   }
 }
+
 </script>
