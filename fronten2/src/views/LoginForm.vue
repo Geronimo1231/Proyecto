@@ -13,6 +13,7 @@
         </p>
       </div>
 
+      <!-- Formulario -->
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
         <div class="rounded-md shadow-sm space-y-4">
           <div>
@@ -57,6 +58,7 @@
           </div>
         </div>
 
+        <!-- Botón -->
         <div>
           <button
             type="submit"
@@ -74,11 +76,33 @@
           </button>
         </div>
 
-      <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
-        {{ errorMessage }}
-      </div>
+          <!-- Alerta de error -->
+          <div
+            v-if="errorMessage"
+            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm"
+            role="alert"
+          >
+            <span class="block sm:inline">{{ errorMessage }}</span>
+            <button
+              @click="errorMessage = ''"
+              class="absolute top-0 bottom-0 right-0 px-4 py-3"
+              aria-label="Cerrar"
+            >
+              <svg
+                class="fill-current h-6 w-6 text-red-500"
+                role="button"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <title>Cerrar</title>
+                <path
+                  d="M14.348 5.652a1 1 0 10-1.414-1.414L10 7.172 7.066 4.238a1 1 0 00-1.414 1.414L8.586 10l-2.934 2.934a1 1 0 101.414 1.414L10 12.828l2.934 2.934a1 1 0 001.414-1.414L11.414 10l2.934-2.934z"
+                />
+              </svg>
+            </button>
+          </div>
 
-        <!-- Credenciales de demostración -->
+        <!-- Credenciales de prueba -->
         <div class="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg">
           <h3 class="text-sm font-medium text-white mb-2">Credenciales de Demostración:</h3>
           <div class="space-y-2 text-xs text-blue-200">
@@ -103,8 +127,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
-
+import { EyeIcon, EyeSlashIcon, TruckIcon } from '@heroicons/vue/24/outline'
 
 const errorMessage = ref('')
 const router = useRouter()
@@ -118,7 +141,7 @@ const form = ref({
 const showPassword = ref(false)
 
 const handleLogin = async () => {
-  errorMessage.value = '' // limpiar mensaje anterior
+  errorMessage.value = '' // Limpiar error anterior
 
   const result = await authStore.login(form.value)
 
@@ -129,9 +152,12 @@ const handleLogin = async () => {
       router.push({ name: 'UserVehiculos' })
     }
   } else {
-    // Mostrar el mensaje en la interfaz
     errorMessage.value = result.message || 'Error al iniciar sesión'
+
+    // Ocultar el mensaje después de 5 segundos
+    setTimeout(() => {
+      errorMessage.value = ''
+    }, 5000)
   }
 }
-
 </script>
